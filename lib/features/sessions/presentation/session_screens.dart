@@ -100,6 +100,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   final _reviewController = TextEditingController();
   bool _isSaving = false;
   String? _errorText;
+  String? _loadedReviewSessionId;
 
   @override
   void dispose() {
@@ -126,7 +127,6 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
           .saveReview(sessionId: widget.id, note: note);
       ref.invalidate(sessionsProvider);
       if (!mounted) return;
-      _reviewController.clear();
       setState(() => _isSaving = false);
       showPhaseNotice(context, 'Therapist review saved.');
     } catch (e) {
@@ -155,6 +155,10 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                 title: 'Session not found',
                 message: 'Choose an available session from the patient record.',
               );
+            }
+            if (_loadedReviewSessionId != session.id) {
+              _loadedReviewSessionId = session.id;
+              _reviewController.text = session.reviewNote ?? '';
             }
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -189,7 +193,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                     value:
                         session.analysisPayload['source'] == 'android_camera' &&
                             (session.exerciseId == 'e3' ||
-                                session.exerciseId == 'e4')
+                                session.exerciseId == 'e4' ||
+                                session.exerciseId == 'e9')
                         ? 'N/A'
                         : '${session.repetitions}',
                     label: 'Repetitions',
@@ -263,6 +268,16 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                   ),
                 ),
                 const SectionHeading('Therapist review'),
+                if (session.reviewNote != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      'You can edit the saved review below.',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
                 TextField(
                   controller: _reviewController,
                   minLines: 3,
@@ -296,8 +311,10 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Save review',
+                      : Text(
+                          session.reviewNote == null
+                              ? 'Save review'
+                              : 'Update review',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 15,

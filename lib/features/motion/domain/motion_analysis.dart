@@ -4,7 +4,13 @@ enum MotionExercise {
   shoulderReach('e1', 'Shoulder reach'),
   kneeExtension('e2', 'Seated knee extension'),
   seatedBalance('e3', 'Seated balance'),
-  armHold('e4', 'Arm hold');
+  armHold('e4', 'Arm hold'),
+  elbowFlexion('e5', 'Elbow flexion'),
+  hipFlexion('e6', 'Seated hip flexion'),
+  kneeFlexion('e7', 'Seated knee flexion'),
+  shoulderAbduction('e8', 'Shoulder abduction'),
+  trunkAlignment('e9', 'Trunk alignment hold'),
+  sitToStand('e10', 'Sit to stand');
 
   const MotionExercise(this.id, this.label);
   final String id, label;
@@ -114,8 +120,17 @@ class MotionAnalyzer {
     final knee = rightSide ? Joint.rightKnee : Joint.leftKnee;
     final ankle = rightSide ? Joint.rightAnkle : Joint.leftAnkle;
     final required = switch (exercise) {
-      MotionExercise.kneeExtension => [hip, knee, ankle],
+      MotionExercise.kneeExtension ||
+      MotionExercise.kneeFlexion ||
+      MotionExercise.sitToStand => [hip, knee, ankle],
       MotionExercise.seatedBalance => [
+        Joint.leftShoulder,
+        Joint.rightShoulder,
+        Joint.leftHip,
+        Joint.rightHip,
+        Joint.nose,
+      ],
+      MotionExercise.trunkAlignment => [
         Joint.leftShoulder,
         Joint.rightShoulder,
         Joint.leftHip,
@@ -149,7 +164,17 @@ class MotionAnalyzer {
       final lh = pose.point(Joint.leftHip)!, rh = pose.point(Joint.rightHip)!;
       final width = (ls.x - rs.x).abs();
       if (width > .04) raw = ((ls.x + rs.x - lh.x - rh.x) / 2).abs() / width;
-    } else if (exercise == MotionExercise.kneeExtension) {
+    } else if (exercise == MotionExercise.trunkAlignment) {
+      final ls = pose.point(Joint.leftShoulder)!,
+          rs = pose.point(Joint.rightShoulder)!;
+      final lh = pose.point(Joint.leftHip)!, rh = pose.point(Joint.rightHip)!;
+      final shoulderMid = (ls.x + rs.x) / 2;
+      final hipMid = (lh.x + rh.x) / 2;
+      final torso = ((ls.y + rs.y) / 2 - (lh.y + rh.y) / 2).abs();
+      raw = torso > .05 ? (shoulderMid - hipMid).abs() * pose.aspect / torso : null;
+    } else if (exercise == MotionExercise.kneeExtension ||
+        exercise == MotionExercise.kneeFlexion ||
+        exercise == MotionExercise.sitToStand) {
       raw = jointAngle(
         pose.point(hip)!,
         pose.point(knee)!,
@@ -157,12 +182,25 @@ class MotionAnalyzer {
         pose.aspect,
       );
     } else {
-      raw = jointAngle(
-        pose.point(hip)!,
-        pose.point(shoulder)!,
-        pose.point(wrist)!,
-        pose.aspect,
-      );
+      final (a, b, c) = switch (exercise) {
+        MotionExercise.elbowFlexion => (
+          pose.point(shoulder)!,
+          pose.point(elbow)!,
+          pose.point(wrist)!,
+        ),
+        MotionExercise.hipFlexion => (
+          pose.point(shoulder)!,
+          pose.point(hip)!,
+          pose.point(knee)!,
+        ),
+        MotionExercise.shoulderAbduction => (
+          pose.point(hip)!,
+          pose.point(shoulder)!,
+          pose.point(elbow)!,
+        ),
+        _ => (pose.point(hip)!, pose.point(shoulder)!, pose.point(wrist)!),
+      };
+      raw = jointAngle(a, b, c, pose.aspect);
       final s = pose.point(shoulder)!, h = pose.point(hip)!;
       final torso = (s.y - h.y).abs();
       lean = torso > .05
@@ -181,7 +219,8 @@ class MotionAnalyzer {
     _window.add(raw);
     if (_window.length > 5) _window.removeAt(0);
     final metric = _window.reduce((a, b) => a + b) / _window.length;
-    if (exercise != MotionExercise.seatedBalance) {
+    if (exercise != MotionExercise.seatedBalance &&
+        exercise != MotionExercise.trunkAlignment) {
       maxAngle = math.max(maxAngle ?? metric, metric);
     }
     bool good;
@@ -189,31 +228,40 @@ class MotionAnalyzer {
     if (exercise == MotionExercise.seatedBalance) {
       good = metric <= .15;
       message = good ? 'Hold steady' : 'Return to center';
-    } else if (exercise == MotionExercise.armHold) {
-      good = metric >= 60 && lean <= .25;
+    } else if (exercise == MotionExercise.armHold ||
+        exercise == MotionExercise.trunkAlignment) {
+      good = exercise == MotionExercise.trunkAlignment
+          ? metric <= .25
+          : metric >= 60 && lean <= .25;
       if (good && _previousGood) holdSeconds += dt;
-      message = lean > .25
+      message = exercise == MotionExercise.trunkAlignment
+          ? (good ? 'Hold your trunk steady' : 'Keep your back straight')
+          : lean > .25
           ? 'Keep back straight'
           : good
           ? 'Hold position'
           : 'Raise arm slightly';
     } else {
-      final isKnee = exercise == MotionExercise.kneeExtension;
-      final upper = isKnee ? 155.0 : 70.0;
-      final lower = isKnee ? 115.0 : 35.0;
+      final thresholds = switch (exercise) {
+        MotionExercise.kneeExtension => (lower: 115.0, upper: 155.0),
+        MotionExercise.kneeFlexion => (lower: 70.0, upper: 145.0),
+        MotionExercise.sitToStand => (lower: 100.0, upper: 155.0),
+        MotionExercise.elbowFlexion => (lower: 45.0, upper: 140.0),
+        MotionExercise.hipFlexion => (lower: 45.0, upper: 105.0),
+        MotionExercise.shoulderAbduction => (lower: 35.0, upper: 75.0),
+        _ => (lower: 35.0, upper: 70.0),
+      };
       good = lean <= .25;
       message = !good
           ? 'Keep back straight'
-          : metric >= upper
+          : metric >= thresholds.upper
           ? 'Return slowly'
-          : isKnee
-          ? 'Extend your knee more'
-          : 'Raise your arm higher';
+          : 'Move through the target range';
       if (!good) {
         _armed = false;
         _raised = false;
         _topSince = null;
-      } else if (metric <= lower) {
+      } else if (metric <= thresholds.lower) {
         if (_armed && _raised && _cycleStart != null) {
           if (time - _cycleStart! >= const Duration(milliseconds: 1200)) {
             repetitions++;
@@ -225,7 +273,7 @@ class MotionAnalyzer {
         _raised = false;
         _topSince = null;
         _cycleStart = time;
-      } else if (_armed && metric >= upper) {
+      } else if (_armed && metric >= thresholds.upper) {
         _topSince ??= time;
         if (time - _topSince! >= const Duration(milliseconds: 300)) {
           _raised = true;
@@ -233,7 +281,7 @@ class MotionAnalyzer {
       } else {
         _topSince = null;
       }
-      if (good && metric >= upper) {
+      if (good && metric >= thresholds.upper) {
         message = !_armed
             ? 'Return to the starting position'
             : _raised
@@ -274,7 +322,10 @@ class MotionAnalyzer {
     'accepted_ratio': acceptedRatio,
     'valid_seconds': validSeconds,
     'side': rightSide ? 'right' : 'left',
-    'hold_seconds': exercise == MotionExercise.armHold ? holdSeconds : null,
+    'hold_seconds': exercise == MotionExercise.armHold ||
+            exercise == MotionExercise.trunkAlignment
+        ? holdSeconds
+        : null,
     'stability_percent':
         exercise == MotionExercise.seatedBalance && validSeconds > 0
         ? goodSeconds / validSeconds * 100

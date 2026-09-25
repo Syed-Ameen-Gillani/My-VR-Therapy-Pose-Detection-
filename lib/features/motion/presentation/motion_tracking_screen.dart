@@ -11,6 +11,8 @@ import '../../plans/domain/rehabilitation_plan.dart';
 import '../../sessions/domain/therapy_session.dart';
 import '../application/motion_controller.dart';
 import '../domain/motion_analysis.dart';
+import '../../../core/widgets/common.dart';
+import '../../../app/theme/app_theme.dart';
 
 class MotionTrackingScreen extends ConsumerStatefulWidget {
   const MotionTrackingScreen({
@@ -173,7 +175,10 @@ class _MotionTrackingScreenState extends ConsumerState<MotionTrackingScreen>
             planVersion: plan.version,
           );
       ref.invalidate(sessionsProvider);
-      if (mounted) setState(() => _saved = true);
+      if (mounted) {
+        setState(() => _saved = true);
+        context.pushReplacement('/sessions/$_sessionId');
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
@@ -290,12 +295,80 @@ class _MotionTrackingScreenState extends ConsumerState<MotionTrackingScreen>
                   'Session summary',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  '${exercise.label} · ${DateTime.now().toLocal().toString().substring(0, 16)}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    StatusBadge(
+                      controller.analyzer.status == 'ready'
+                          ? 'Analysis ready'
+                          : 'Review recommended',
+                      tone: controller.analyzer.status == 'ready'
+                          ? StatusTone.success
+                          : StatusTone.warning,
+                    ),
+                    StatusBadge('Tracking ${controller.analyzer.quality}'),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                AdaptivePair(
+                  first: MetricCard(
+                    value: '${controller.durationSeconds}s',
+                    label: 'Session duration',
+                    icon: Icons.timer_outlined,
+                  ),
+                  second: MetricCard(
+                    value: '${controller.analyzer.accepted}',
+                    label: 'Accepted frames',
+                    icon: Icons.check_circle_outline,
+                  ),
+                ),
+                const SectionHeading('Movement summary'),
+                ContentCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        exercise == MotionExercise.seatedBalance
+                            ? 'Balance stability'
+                            : exercise == MotionExercise.armHold
+                            ? 'Arm hold duration'
+                            : 'Movement range',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        exercise == MotionExercise.seatedBalance
+                            ? '${controller.analyzer.validSeconds > 0 ? (controller.analyzer.goodSeconds / controller.analyzer.validSeconds * 100).round() : 0}% stable time'
+                            : exercise == MotionExercise.armHold
+                            ? '${controller.analyzer.holdSeconds.toStringAsFixed(1)} seconds held'
+                            : '${controller.analyzer.maxAngle?.round() ?? 0}° maximum angle · ${controller.analyzer.repetitions} repetitions',
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Accepted ${controller.analyzer.accepted} of ${controller.analyzer.analyzed} analyzed frames.',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Text(
                   'Duration: ${controller.durationSeconds} seconds\n'
                   'Analysis: ${controller.analyzer.status}\nTracking quality: ${controller.analyzer.quality}\n'
                   'Accepted frames: ${controller.analyzer.accepted}/${controller.analyzer.analyzed}',
                 ),
-                if (exercise == MotionExercise.armHold)
+                if (exercise == MotionExercise.armHold ||
+                    exercise == MotionExercise.trunkAlignment)
                   Text(
                     'Hold: ${controller.analyzer.holdSeconds.toStringAsFixed(1)} seconds',
                   )
@@ -394,7 +467,8 @@ class _MotionTrackingScreenState extends ConsumerState<MotionTrackingScreen>
                         child: Column(
                           children: [
                             if (controller.startedAt == null &&
-                                exercise != MotionExercise.seatedBalance)
+                                exercise != MotionExercise.seatedBalance &&
+                                exercise != MotionExercise.trunkAlignment)
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [

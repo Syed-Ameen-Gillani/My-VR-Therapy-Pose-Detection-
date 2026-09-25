@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../../app/di/providers.dart';
 import '../../../core/widgets/common.dart';
 import '../../sessions/domain/therapy_session.dart';
@@ -23,7 +24,8 @@ List<TherapySession> comparableExerciseSamples(
           return false;
         }
         return switch (exerciseId) {
-          'e1' || 'e2' => s.rangeDegrees != null &&
+          'e1' || 'e2' || 'e5' || 'e6' || 'e7' || 'e8' =>
+            s.rangeDegrees != null &&
               s.rangeDegrees!.isFinite &&
               s.rangeDegrees! >= 0 &&
               s.rangeDegrees! <= 180,
@@ -80,7 +82,24 @@ class ProgressScreen extends ConsumerWidget {
             final knee = comparableExerciseSamples(sessions, 'e2');
             final balance = comparableExerciseSamples(sessions, 'e3');
             final hold = comparableExerciseSamples(sessions, 'e4');
-            final series = [shoulder, knee, balance, hold];
+            final elbow = comparableExerciseSamples(sessions, 'e5');
+            final hip = comparableExerciseSamples(sessions, 'e6');
+            final kneeFlexion = comparableExerciseSamples(sessions, 'e7');
+            final abduction = comparableExerciseSamples(sessions, 'e8');
+            final trunk = comparableExerciseSamples(sessions, 'e9');
+            final sitToStand = comparableExerciseSamples(sessions, 'e10');
+            final series = [
+              shoulder,
+              knee,
+              balance,
+              hold,
+              elbow,
+              hip,
+              kneeFlexion,
+              abduction,
+              trunk,
+              sitToStand,
+            ];
             if (series.every((samples) => samples.isEmpty)) {
               return const StateMessage(
                 title: 'No comparable measurements',
@@ -96,9 +115,15 @@ class ProgressScreen extends ConsumerWidget {
                   ('Knee range', knee, 'degrees', 180.0),
                   ('Balance stability', balance, '% stable', 100.0),
                   ('Arm hold', hold, 'seconds', 30.0),
+                  ('Elbow flexion', elbow, 'degrees', 180.0),
+                  ('Hip flexion', hip, 'degrees', 180.0),
+                  ('Knee flexion', kneeFlexion, 'degrees', 180.0),
+                  ('Shoulder abduction', abduction, 'degrees', 180.0),
+                  ('Trunk alignment', trunk, 'seconds', 30.0),
+                  ('Sit to stand', sitToStand, 'degrees', 180.0),
                 ])
                   if (entry.$2.isNotEmpty)
-                    _ProgressMetricCard(
+                    _ProgressMetricGraphCard(
                       title: entry.$1,
                       samples: entry.$2,
                       unit: entry.$3,
@@ -117,8 +142,8 @@ class ProgressScreen extends ConsumerWidget {
   );
 }
 
-class _ProgressMetricCard extends StatelessWidget {
-  const _ProgressMetricCard({
+class _ProgressMetricGraphCard extends StatelessWidget {
+  const _ProgressMetricGraphCard({
     required this.title,
     required this.samples,
     required this.unit,
@@ -147,6 +172,43 @@ class _ProgressMetricCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text('Each bar is one measured session · scale 0–${scale.round()}'),
           const SizedBox(height: 16),
+          SizedBox(
+            height: 190,
+            child: LineChart(
+              LineChartData(
+                minY: 0,
+                maxY: scale,
+                minX: 0,
+                maxX: samples.length > 1 ? (samples.length - 1).toDouble() : 1,
+                gridData: FlGridData(show: true, drawVerticalLine: false),
+                borderData: FlBorderData(show: false),
+                titlesData: const FlTitlesData(
+                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: [
+                      for (var i = 0; i < samples.length; i++)
+                        FlSpot(i.toDouble(), _value(samples[i])),
+                    ],
+                    isCurved: true,
+                    barWidth: 3,
+                    color: Theme.of(context).colorScheme.primary,
+                    dotData: const FlDotData(show: true),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: .12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           for (final sample in samples)
             Padding(
               padding: const EdgeInsets.only(bottom: 16),

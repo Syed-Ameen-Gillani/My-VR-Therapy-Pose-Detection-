@@ -65,6 +65,33 @@ values ('e4', 'Arm hold', 'Upper body',
   'Follow the therapist-agreed target. Hold the arm in the camera plane with a steady trunk. Stop if uncomfortable.',
   'Android phone on a stable stand', 1, true)
 on conflict (id) do nothing;
+
+insert into public.exercises (id, name, category, instructions, equipment, version, enabled)
+values
+  ('e5', 'Elbow flexion', 'Upper body',
+   'Bend and slowly straighten the selected elbow in view.',
+   'Android phone on a stable stand', 1, true),
+  ('e6', 'Seated hip flexion', 'Lower body',
+   'Lift the selected knee gently while seated, then lower it.',
+   'Chair and Android phone', 1, true),
+  ('e7', 'Seated knee flexion', 'Lower body',
+   'Bend and extend the selected knee within the agreed range.',
+   'Chair and Android phone', 1, true),
+  ('e8', 'Shoulder abduction', 'Upper body',
+   'Raise the selected arm out to the side and return slowly.',
+   'Android phone on a stable stand', 1, true),
+  ('e9', 'Trunk alignment hold', 'Posture',
+   'Sit tall and hold your trunk centered with steady shoulders.',
+   'Chair and Android phone', 1, true),
+  ('e10', 'Sit to stand', 'Functional movement',
+   'Stand from the chair with control, then sit down slowly.',
+   'Stable chair and Android phone', 1, true)
+on conflict (id) do update
+set name = excluded.name,
+    category = excluded.category,
+    instructions = excluded.instructions,
+    equipment = excluded.equipment,
+    enabled = true;
 commit;
 
 -- Refresh PostgREST metadata so newly added review columns are visible immediately.

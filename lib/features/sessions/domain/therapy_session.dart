@@ -13,6 +13,7 @@ class TherapySession {
     this.aiFeedback,
     this.trackingQuality,
     this.modelVersion,
+    this.reviewNote,
     this.reviewed = false,
     this.analysisPayload = const {},
   });
@@ -22,6 +23,7 @@ class TherapySession {
   final AnalysisStatus analysis;
   final double? rangeDegrees;
   final String? aiFeedback, trackingQuality, modelVersion;
+  final String? reviewNote;
   final bool reviewed;
   final Map<String, Object?> analysisPayload;
 
@@ -37,6 +39,7 @@ class TherapySession {
     String? aiFeedback,
     String? trackingQuality,
     String? modelVersion,
+    String? reviewNote,
     bool? reviewed,
   }) => TherapySession(
     id: id ?? this.id,
@@ -50,6 +53,7 @@ class TherapySession {
     aiFeedback: aiFeedback ?? this.aiFeedback,
     trackingQuality: trackingQuality ?? this.trackingQuality,
     modelVersion: modelVersion ?? this.modelVersion,
+    reviewNote: reviewNote ?? this.reviewNote,
     reviewed: reviewed ?? this.reviewed,
     analysisPayload: analysisPayload,
   );

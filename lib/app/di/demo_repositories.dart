@@ -170,6 +170,48 @@ class DemoRepositories
           'Sample exercise for interface demonstration. A therapist must confirm the appropriate exercise and equipment.',
       equipment: 'Chair and VR headset',
     ),
+    Exercise(
+      id: 'e5',
+      name: 'Elbow flexion',
+      category: 'Upper body',
+      instructions: 'Bend and slowly straighten the selected elbow in view.',
+      equipment: 'Android phone on a stable stand',
+    ),
+    Exercise(
+      id: 'e6',
+      name: 'Seated hip flexion',
+      category: 'Lower body',
+      instructions: 'Lift the selected knee gently while seated, then lower it.',
+      equipment: 'Chair and Android phone',
+    ),
+    Exercise(
+      id: 'e7',
+      name: 'Seated knee flexion',
+      category: 'Lower body',
+      instructions: 'Bend and extend the selected knee within the agreed range.',
+      equipment: 'Chair and Android phone',
+    ),
+    Exercise(
+      id: 'e8',
+      name: 'Shoulder abduction',
+      category: 'Upper body',
+      instructions: 'Raise the selected arm out to the side and return slowly.',
+      equipment: 'Android phone on a stable stand',
+    ),
+    Exercise(
+      id: 'e9',
+      name: 'Trunk alignment hold',
+      category: 'Posture',
+      instructions: 'Sit tall and hold your trunk centered with steady shoulders.',
+      equipment: 'Chair and Android phone',
+    ),
+    Exercise(
+      id: 'e10',
+      name: 'Sit to stand',
+      category: 'Functional movement',
+      instructions: 'Stand from the chair with control, then sit down slowly.',
+      equipment: 'Stable chair and Android phone',
+    ),
   ]);
   late final List<RehabilitationPlan> _plans = [
     const RehabilitationPlan(

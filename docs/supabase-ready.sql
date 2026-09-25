@@ -338,6 +338,55 @@ values
     'Balance',
     'Maintain seated balance while following VR prompts.',
     'Chair and VR headset'
+  ),
+  (
+    'e4',
+    'Arm hold',
+    'Upper body',
+    'Hold the arm in the camera plane at the therapist-agreed target.',
+    'Android phone on a stable stand'
+  ),
+  (
+    'e5',
+    'Elbow flexion',
+    'Upper body',
+    'Bend and slowly straighten the selected elbow in view.',
+    'Android phone on a stable stand'
+  ),
+  (
+    'e6',
+    'Seated hip flexion',
+    'Lower body',
+    'Lift the selected knee gently while seated, then lower it.',
+    'Chair and Android phone'
+  ),
+  (
+    'e7',
+    'Seated knee flexion',
+    'Lower body',
+    'Bend and extend the selected knee within the agreed range.',
+    'Chair and Android phone'
+  ),
+  (
+    'e8',
+    'Shoulder abduction',
+    'Upper body',
+    'Raise the selected arm out to the side and return slowly.',
+    'Android phone on a stable stand'
+  ),
+  (
+    'e9',
+    'Trunk alignment hold',
+    'Posture',
+    'Sit tall and hold your trunk centered with steady shoulders.',
+    'Chair and Android phone'
+  ),
+  (
+    'e10',
+    'Sit to stand',
+    'Functional movement',
+    'Stand from the chair with control, then sit down slowly.',
+    'Stable chair and Android phone'
   )
 on conflict (id) do update
 set name = excluded.name,

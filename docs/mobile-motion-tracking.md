@@ -4,7 +4,7 @@
 
 1. Run `supabase-motion.sql` in the project's Supabase SQL Editor after the existing setup. It is additive and can be rerun. No remote migration has been performed automatically.
 2. Fully rebuild/restart the Android app; hot reload cannot install camera/ML Kit native plugins.
-3. Open a patient with an active prescription. Prescribe one of `e1` shoulder reach, `e2` knee extension, `e3` balance, or `e4` arm hold.
+3. Open a patient with an active prescription. The camera catalog supports `e1`–`e10`: shoulder reach, knee extension, seated balance, arm hold, elbow flexion, seated hip flexion, seated knee flexion, shoulder abduction, trunk alignment hold, and sit to stand.
 4. Tap **Track [exercise]**, select the exercising side if relevant, then start the camera. Grant camera permission. Microphone permission is not needed.
 5. Finish, inspect the summary and save. Saved results use the ordinary session/review flow. A failed save retains the summary and session ID for retry while this screen remains open.
 

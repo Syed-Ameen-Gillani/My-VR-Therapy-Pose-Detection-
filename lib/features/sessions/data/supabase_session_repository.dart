@@ -54,7 +54,7 @@ class SupabaseSessionRepository implements SessionRepository {
 
       final data = await _client
           .from('sessions')
-          .select('*, session_reviews!left(therapist_id)')
+          .select('*, session_reviews!left(therapist_id, therapist_note)')
           .eq('therapist_id', user.id)
           .order('started_at', ascending: false);
 
@@ -109,6 +109,7 @@ class SupabaseSessionRepository implements SessionRepository {
       aiFeedback: _stringValue(analysisPayload['feedback']),
       trackingQuality: _stringValue(analysisPayload['tracking_quality']),
       modelVersion: _stringValue(analysisPayload['model_version']),
+      reviewNote: _reviewNote(map['session_reviews']),
       analysisPayload: analysisPayload,
       reviewed:
           ((map['reviewed'] as bool?) ?? false) ||
@@ -129,5 +130,11 @@ class SupabaseSessionRepository implements SessionRepository {
   String? _stringValue(Object? value) {
     final text = value?.toString().trim();
     return text == null || text.isEmpty ? null : text;
+  }
+
+  String? _reviewNote(Object? value) {
+    if (value is! List || value.isEmpty || value.first is! Map) return null;
+    final row = Map<String, dynamic>.from(value.first as Map);
+    return _stringValue(row['therapist_note'] ?? row['note']);
   }
 }
