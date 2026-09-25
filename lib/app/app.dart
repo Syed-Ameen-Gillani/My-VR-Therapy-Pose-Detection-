@@ -7,7 +7,7 @@ class TherapyApp extends ConsumerWidget {
   const TherapyApp({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) => MaterialApp.router(
-    title: 'MY VR Therapy',
+    title: 'VR Therapy',
     debugShowCheckedModeBanner: false,
     theme: buildAppTheme(),
     routerConfig: ref.watch(routerProvider),

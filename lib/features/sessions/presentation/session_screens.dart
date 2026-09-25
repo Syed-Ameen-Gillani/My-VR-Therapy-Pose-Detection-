@@ -6,6 +6,50 @@ import '../../../core/widgets/common.dart';
 import '../domain/therapy_session.dart';
 import 'session_row.dart';
 
+class AllSessionsScreen extends ConsumerWidget {
+  const AllSessionsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
+    appBar: AppBar(title: const Text('All sessions')),
+    body: PageBody(
+      children: [
+        AsyncContent(
+          value: ref.watch(sessionsProvider),
+          onRetry: () => ref.invalidate(sessionsProvider),
+          builder: (sessions) {
+            final patients = ref.watch(patientsProvider).value ?? const [];
+            if (sessions.isEmpty) {
+              return const StateMessage(
+                title: 'No sessions yet',
+                message: 'Saved movement sessions will appear here.',
+              );
+            }
+            return Column(
+              children: [
+                for (final session in sessions)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Card(
+                      child: SessionRow(
+                        session: session,
+                        title: patients
+                                .where((p) => p.id == session.patientId)
+                                .firstOrNull
+                                ?.name ??
+                            'Patient unavailable',
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
+
 class SessionHistoryScreen extends ConsumerWidget {
   const SessionHistoryScreen({super.key, required this.patientId});
   final String patientId;
@@ -14,10 +58,10 @@ class SessionHistoryScreen extends ConsumerWidget {
     appBar: AppBar(title: const Text('Session history')),
     body: PageBody(
       children: [
-        const PageHeading(
-          'One session at a time',
-          'Sample results, ordered by most recent.',
-        ),
+        // const PageHeading(
+        //   'One session at a time',
+        //   'Sample results, ordered by most recent.',
+        // ),
         AsyncContent(
           value: ref.watch(patientSessionsProvider(patientId)),
           onRetry: () => ref.invalidate(sessionsProvider),
@@ -117,7 +161,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
               children: [
                 PageHeading(
                   'Movement session',
-                  '${DateFormat('d MMMM yyyy · HH:mm').format(session.startedAt)} UTC · Sample data',
+                  '${DateFormat('d MMMM yyyy · HH:mm').format(session.startedAt)} UTC'
+                      '${session.analysisPayload['source'] == 'android_camera' ? ' · Android camera' : ''}',
                 ),
                 Wrap(
                   spacing: 8,
@@ -134,12 +179,19 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                 const SizedBox(height: 20),
                 AdaptivePair(
                   first: MetricCard(
-                    value: '${session.durationMinutes} min',
+                    value: session.analysisPayload['duration_seconds'] is num
+                        ? '${session.analysisPayload['duration_seconds']} sec'
+                        : '${session.durationMinutes} min',
                     label: 'Session duration',
                     icon: Icons.timer_outlined,
                   ),
                   second: MetricCard(
-                    value: '${session.repetitions}',
+                    value:
+                        session.analysisPayload['source'] == 'android_camera' &&
+                            (session.exerciseId == 'e3' ||
+                                session.exerciseId == 'e4')
+                        ? 'N/A'
+                        : '${session.repetitions}',
                     label: 'Repetitions',
                     icon: Icons.repeat,
                   ),
@@ -151,14 +203,18 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                     children: [
                       Text(
                         session.rangeDegrees == null
-                            ? 'Measurement unavailable'
-                            : '${session.rangeDegrees!.toStringAsFixed(0)}° shoulder range',
+                            ? session.analysis == AnalysisStatus.ready &&
+                                      session.analysisPayload['stability_percent']
+                                          is num
+                                  ? 'Balance stability'
+                                  : 'Measurement unavailable'
+                            : '${session.rangeDegrees!.toStringAsFixed(0)}° movement angle',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 8),
                       Text(switch (session.analysis) {
                         AnalysisStatus.ready =>
-                          'Sample measurement from a simulated session. This value is not a clinical assessment.',
+                          'Movement estimate for therapist review. This value is not a clinical assessment.',
                         AnalysisStatus.pending =>
                           'Analysis is still processing. No movement score is available yet.',
                         AnalysisStatus.incomplete =>
@@ -166,6 +222,16 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                         AnalysisStatus.failed =>
                           'Analysis could not be completed. Session completion is still recorded.',
                       }),
+                      if (session.analysis == AnalysisStatus.ready &&
+                          session.analysisPayload['stability_percent'] is num)
+                        Text(
+                          'Stability: ${(session.analysisPayload['stability_percent'] as num).toStringAsFixed(0)}%',
+                        ),
+                      if (session.analysis == AnalysisStatus.ready &&
+                          session.analysisPayload['hold_seconds'] is num)
+                        Text(
+                          'Arm hold: ${(session.analysisPayload['hold_seconds'] as num).toStringAsFixed(1)} seconds',
+                        ),
                     ],
                   ),
                 ),

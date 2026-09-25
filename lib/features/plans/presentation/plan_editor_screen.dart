@@ -95,19 +95,19 @@ class _PlanEditorScreenState extends ConsumerState<PlanEditorScreen> {
         appBar: AppBar(title: const Text('Prescription editor')),
         body: PageBody(
           children: [
-            StatusBadge(
-              _step == 2
-                  ? 'Prescription ready to publish'
-                  : 'Prescription setup • Step ${_step + 1} of 3',
-            ),
-            const SizedBox(height: 16),
+            // StatusBadge(
+            //   _step == 2
+            //       ? 'Prescription ready to publish'
+            //       : 'Prescription setup • Step ${_step + 1} of 3',
+            // ),
+            // const SizedBox(height: 16),
             PageHeading(
               [
                 'Choose exercises',
                 'Targets and schedule',
                 'Review prescription draft',
               ][_step],
-              'Step ${_step + 1} of 3 · Patient ${widget.patientId.toUpperCase()}',
+              'Step ${_step + 1} of 3',
             ),
             LinearProgressIndicator(
               value: (_step + 1) / 3,

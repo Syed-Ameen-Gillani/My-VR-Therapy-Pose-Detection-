@@ -19,7 +19,7 @@ class AppShell extends StatelessWidget {
     final scaled = MediaQuery.textScalerOf(context).scale(14) / 14;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MY VR Therapy'),
+        title: const Text('VR Therapy'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),

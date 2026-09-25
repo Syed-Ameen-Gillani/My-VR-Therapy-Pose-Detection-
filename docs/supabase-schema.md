@@ -329,3 +329,7 @@ Missing keys are allowed. Android shows explicit unavailable states rather than 
 - `SupabaseSessionRepository` reads `sessions` with the current therapist's `session_reviews`, then upserts review notes into `session_reviews`.
 
 The mobile app must only use the publishable/anon key. Never commit or ship a service-role key.
+
+## Android camera session migration
+
+For Phase X, run `docs/supabase-motion.sql` **after** the baseline schema. It adds missing session columns and the ownership-checked insert policy needed by Android motion tracking. See `docs/mobile-motion-tracking.md` for setup and remaining validation.

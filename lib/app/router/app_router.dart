@@ -13,6 +13,7 @@ import '../../features/progress/presentation/progress_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../core/widgets/common.dart';
 import 'app_shell.dart';
+import '../../features/motion/presentation/motion_tracking_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(ref.read(isAuthenticatedProvider));
@@ -82,6 +83,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, s) => PatientDetailScreen(id: s.pathParameters['id']!),
       ),
       GoRoute(
+        path: '/patients/:id/motion/:exerciseId',
+        builder: (_, s) => MotionTrackingScreen(
+          patientId: s.pathParameters['id']!,
+          exerciseId: s.pathParameters['exerciseId']!,
+        ),
+      ),
+      GoRoute(
         path: '/patients/:id/plan',
         builder: (_, s) => PlanEditorScreen(patientId: s.pathParameters['id']!),
       ),
@@ -93,6 +101,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/patients/:id/progress',
         builder: (_, s) => ProgressScreen(patientId: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/sessions',
+        builder: (_, _) => const AllSessionsScreen(),
       ),
       GoRoute(
         path: '/sessions/:id',

@@ -7,6 +7,44 @@ class SupabaseSessionRepository implements SessionRepository {
   final SupabaseClient _client;
 
   @override
+  Future<void> createSession(
+    TherapySession session, {
+    required Map<String, Object?> payload,
+    required String planId,
+    required int planVersion,
+  }) async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw const AppFailure('Sign in to save this session.');
+    try {
+      // A stable client-generated ID makes retry after a lost response safe.
+      await _client
+          .from('sessions')
+          .upsert(
+            {
+              'id': session.id,
+              'patient_id': session.patientId,
+              'therapist_id': user.id,
+              'exercise_id': session.exerciseId,
+              'plan_id': planId,
+              'plan_version': planVersion,
+              'started_at': session.startedAt.toUtc().toIso8601String(),
+              'duration_minutes': session.durationMinutes,
+              'repetitions': session.repetitions,
+              'analysis_status': session.analysis.name,
+              'range_degrees': session.rangeDegrees,
+              'analysis_payload': payload,
+            },
+            onConflict: 'id',
+            ignoreDuplicates: true,
+          );
+    } catch (e) {
+      throw AppFailure(
+        'Session not saved. You can retry without duplicating it. $e',
+      );
+    }
+  }
+
+  @override
   Future<List<TherapySession>> getSessions() async {
     try {
       final user = _client.auth.currentUser;
@@ -44,7 +82,8 @@ class SupabaseSessionRepository implements SessionRepository {
       await _client.from('session_reviews').upsert({
         'session_id': sessionId,
         'therapist_id': user.id,
-        'note': note.trim(),
+        // Existing Supabase projects use therapist_note for this field.
+        'therapist_note': note.trim(),
         'reviewed_at': DateTime.now().toUtc().toIso8601String(),
       }, onConflict: 'session_id,therapist_id');
     } on AppFailure {
@@ -70,6 +109,7 @@ class SupabaseSessionRepository implements SessionRepository {
       aiFeedback: _stringValue(analysisPayload['feedback']),
       trackingQuality: _stringValue(analysisPayload['tracking_quality']),
       modelVersion: _stringValue(analysisPayload['model_version']),
+      analysisPayload: analysisPayload,
       reviewed:
           ((map['reviewed'] as bool?) ?? false) ||
           ((map['session_reviews'] as List?)?.isNotEmpty ?? false),

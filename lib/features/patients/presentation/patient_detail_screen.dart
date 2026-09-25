@@ -7,6 +7,7 @@ import '../../../core/widgets/common.dart';
 import '../domain/patient.dart';
 import 'patient_form_dialog.dart';
 import '../../sessions/presentation/session_row.dart';
+import '../../motion/domain/motion_analysis.dart';
 
 class PatientDetailScreen extends ConsumerWidget {
   const PatientDetailScreen({super.key, required this.id});
@@ -38,11 +39,17 @@ class PatientDetailScreen extends ConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      await ref.read(patientRepositoryProvider).archivePatient(patient.id);
-      ref.invalidate(patientsProvider);
-      if (context.mounted) {
-        context.pop();
-        showPhaseNotice(context, '${patient.name} archived.');
+      try {
+        await ref.read(patientRepositoryProvider).archivePatient(patient.id);
+        ref.invalidate(patientsProvider);
+        if (context.mounted) {
+          context.pop();
+          showPhaseNotice(context, '${patient.name} archived.');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          showPhaseNotice(context, 'Could not archive patient: $e');
+        }
       }
     }
   }
@@ -165,7 +172,34 @@ class PatientDetailScreen extends ConsumerWidget {
                                     ? 'No active rehabilitation plan. Prescribe a plan tailored to this patient.'
                                     : '${plan.exerciseIds.length} exercises • ${plan.scheduledSessions} scheduled sessions\nActive Prescription · Version ${plan.version}',
                               ),
-                              const SizedBox(height: 16),
+                              if (plan != null && plan.status == 'active') ...[
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Camera exercises',
+                                  style: Theme.of(context).textTheme.labelLarge,
+                                ),
+                                const SizedBox(height: 8),
+                                for (final exerciseId in plan.exerciseIds)
+                                  if (MotionExercise.fromId(exerciseId)
+                                      case final exercise?)
+                                    Card(
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      child: ListTile(
+                                        leading: const CircleAvatar(
+                                          child: Icon(Icons.accessibility_new),
+                                        ),
+                                        title: Text(exercise.label),
+                                        subtitle: const Text('Camera tracking'),
+                                        trailing: IconButton(
+                                          tooltip: 'Start exercise',
+                                          onPressed: () => context.push(
+                                            '/patients/$id/motion/$exerciseId',
+                                          ),
+                                          icon: const Icon(Icons.play_arrow),
+                                        ),
+                                      ),
+                                    ),
+                              ],
                               FilledButton(
                                 onPressed: () =>
                                     context.push('/patients/$id/plan'),
@@ -196,7 +230,7 @@ class PatientDetailScreen extends ConsumerWidget {
                             const StateMessage(
                               title: 'No sessions yet',
                               message:
-                                  'Results will appear after a VR session is uploaded.',
+                                  'Results will appear after a movement session is saved.',
                             ),
                           for (final s in sessions.take(2))
                             Padding(

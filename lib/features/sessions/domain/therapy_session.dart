@@ -14,6 +14,7 @@ class TherapySession {
     this.trackingQuality,
     this.modelVersion,
     this.reviewed = false,
+    this.analysisPayload = const {},
   });
   final String id, patientId, exerciseId;
   final DateTime startedAt;
@@ -22,6 +23,7 @@ class TherapySession {
   final double? rangeDegrees;
   final String? aiFeedback, trackingQuality, modelVersion;
   final bool reviewed;
+  final Map<String, Object?> analysisPayload;
 
   TherapySession copyWith({
     String? id,
@@ -49,10 +51,17 @@ class TherapySession {
     trackingQuality: trackingQuality ?? this.trackingQuality,
     modelVersion: modelVersion ?? this.modelVersion,
     reviewed: reviewed ?? this.reviewed,
+    analysisPayload: analysisPayload,
   );
 }
 
 abstract interface class SessionRepository {
   Future<List<TherapySession>> getSessions();
+  Future<void> createSession(
+    TherapySession session, {
+    required Map<String, Object?> payload,
+    required String planId,
+    required int planVersion,
+  });
   Future<void> saveReview({required String sessionId, required String note});
 }

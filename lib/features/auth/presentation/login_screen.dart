@@ -111,7 +111,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'MY VR Therapy',
+                      'VR Therapy',
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     const SizedBox(height: 6),

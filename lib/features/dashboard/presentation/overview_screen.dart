@@ -109,11 +109,17 @@ class OverviewScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SectionHeading('Recent sessions'),
+                  SectionHeading(
+                    'Recent sessions',
+                    action: TextButton(
+                      onPressed: () => context.push('/sessions'),
+                      child: const Text('See all'),
+                    ),
+                  ),
                   if (summary.recentSessions.isEmpty)
                     const StateMessage(
                       title: 'No sessions yet',
-                      message: 'Uploaded VR sessions will appear here.',
+                      message: 'Uploaded sessions will appear here.',
                     ),
                   for (final session in summary.recentSessions)
                     Padding(
@@ -130,13 +136,13 @@ class OverviewScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Demo snapshot - 24 September 2026',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+                  // const SizedBox(height: 8),
+                  // Text(
+                  //   'Demo snapshot - 24 September 2026',
+                  //   style: TextStyle(
+                  //     color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  //   ),
+                  // ),
                 ],
               );
             },

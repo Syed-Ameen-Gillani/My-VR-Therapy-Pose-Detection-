@@ -38,6 +38,9 @@ dependencies:
   go_router: ^17.5.0
   intl: ^0.20.3
   supabase_flutter: ^2.8.4
+  camera: ^0.12.1
+  google_mlkit_pose_detection: ^0.16.1
+  flutter_tts: ^4.2.3
 
 dev_dependencies:
   flutter_test:

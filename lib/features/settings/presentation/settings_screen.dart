@@ -86,7 +86,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     : 'All patients and measurements are fictional sample records.',
               ),
               const SizedBox(height: 12),
-              const Text('MY VR Therapy - Phase 2 Active'),
+              const Text('VR Therapy - Phase 2 Active'),
             ],
           ),
         ),

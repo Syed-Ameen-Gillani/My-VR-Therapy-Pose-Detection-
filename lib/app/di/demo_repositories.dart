@@ -139,6 +139,14 @@ class DemoRepositories
   @override
   Future<List<Exercise>> getExercises() => _respond(const [
     Exercise(
+      id: 'e4',
+      name: 'Arm hold',
+      category: 'Upper body',
+      instructions:
+          'Hold the arm in the camera plane at the therapist-agreed target. Stop if uncomfortable.',
+      equipment: 'Android phone on a stable stand',
+    ),
+    Exercise(
       id: 'e1',
       name: 'Shoulder reach',
       category: 'Upper body',
@@ -243,6 +251,17 @@ class DemoRepositories
 
   @override
   Future<List<TherapySession>> getSessions() => _respond(_sessions);
+
+  @override
+  Future<void> createSession(
+    TherapySession session, {
+    required Map<String, Object?> payload,
+    required String planId,
+    required int planVersion,
+  }) async {
+    await _respond([session]);
+    if (!_sessions.any((s) => s.id == session.id)) _sessions.add(session);
+  }
 
   late final List<TherapySession> _sessions = [
     TherapySession(

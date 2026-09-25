@@ -8,17 +8,55 @@ import '../../sessions/domain/therapy_session.dart';
 final progressSamplesProvider = FutureProvider.autoDispose
     .family<List<TherapySession>, String>((ref, id) async {
       final sessions = await ref.watch(patientSessionsProvider(id).future);
-      // One compatible sample exercise and unit, sorted once per input update.
-      return sessions
-          .where(
-            (s) =>
-                s.exerciseId == 'e1' &&
-                s.analysis == AnalysisStatus.ready &&
-                s.rangeDegrees != null,
-          )
-          .toList()
-        ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
+      return comparableShoulderSamples(sessions);
     });
+
+List<TherapySession> comparableExerciseSamples(
+  List<TherapySession> sessions,
+  String exerciseId,
+) {
+  final eligible = sessions
+      .where((s) {
+        if (s.exerciseId != exerciseId ||
+            (s.analysis != AnalysisStatus.ready &&
+                s.trackingQuality != 'High')) {
+          return false;
+        }
+        return switch (exerciseId) {
+          'e1' || 'e2' => s.rangeDegrees != null &&
+              s.rangeDegrees!.isFinite &&
+              s.rangeDegrees! >= 0 &&
+              s.rangeDegrees! <= 180,
+          'e3' => s.analysisPayload['stability_percent'] is num,
+          'e4' => s.analysisPayload['hold_seconds'] is num,
+          _ => false,
+        };
+      })
+      .toList()
+    ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
+  if (eligible.isEmpty) return eligible;
+
+  // Keep the newest compatible series instead of letting one side/model switch
+  // make all earlier measurements disappear.
+  final series = <String, List<TherapySession>>{};
+  for (final sample in eligible) {
+    final key = [
+      sample.analysisPayload['source'] ?? 'legacy',
+      sample.analysisPayload['side'] ?? 'unspecified',
+      sample.analysisPayload['rule_version'] ?? 'legacy',
+      sample.modelVersion ?? 'legacy',
+    ].join('|');
+    (series[key] ??= []).add(sample);
+  }
+  return series.values.reduce(
+    (a, b) => a.last.startedAt.isAfter(b.last.startedAt) ? a : b,
+  );
+}
+
+/// Compare only the newest measurement series, never opposite sides or models.
+List<TherapySession> comparableShoulderSamples(List<TherapySession> sessions) {
+  return comparableExerciseSamples(sessions, 'e1');
+}
 
 class ProgressScreen extends ConsumerWidget {
   const ProgressScreen({super.key, required this.patientId});
@@ -30,88 +68,45 @@ class ProgressScreen extends ConsumerWidget {
       children: [
         const PageHeading(
           'Small steps, clearly seen',
-          'Shoulder reach · September 2026 sample data',
+          'Compatible movement measurements by exercise',
         ),
-        const StatusBadge('Sample movement measurements'),
+        // const StatusBadge('Movement estimates'),
         const SizedBox(height: 24),
         AsyncContent(
-          value: ref.watch(progressSamplesProvider(patientId)),
+          value: ref.watch(patientSessionsProvider(patientId)),
           onRetry: () => ref.invalidate(sessionsProvider),
-          builder: (samples) {
-            if (samples.isEmpty) {
+          builder: (sessions) {
+            final shoulder = comparableExerciseSamples(sessions, 'e1');
+            final knee = comparableExerciseSamples(sessions, 'e2');
+            final balance = comparableExerciseSamples(sessions, 'e3');
+            final hold = comparableExerciseSamples(sessions, 'e4');
+            final series = [shoulder, knee, balance, hold];
+            if (series.every((samples) => samples.isEmpty)) {
               return const StateMessage(
                 title: 'No comparable measurements',
                 message:
-                    'Progress appears when compatible, valid measurements are available. Missing results are not zero.',
+                    'Complete a camera exercise with visible joints and good tracking. Valid measurements will appear here.',
               );
             }
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ContentCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Shoulder range',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      const Text('Degrees · Each bar is one measured session'),
-                      const SizedBox(height: 20),
-                      for (final s in samples)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
-                          child: Semantics(
-                            label:
-                                '${DateFormat('d MMM').format(s.startedAt)}, ${s.rangeDegrees!.round()} degrees',
-                            child: ExcludeSemantics(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${DateFormat('d MMM').format(s.startedAt)} · ${s.rangeDegrees!.round()}°',
-                                  ),
-                                  const SizedBox(height: 6),
-                                  LinearProgressIndicator(
-                                    value: (s.rangeDegrees! / 180).clamp(0, 1),
-                                    minHeight: 12,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      const Text(
-                        'Display scale: 0–180°. This is a chart scale, not a prescribed target.',
-                      ),
-                    ],
-                  ),
-                ),
-                const SectionHeading('Exact measurements'),
-                ContentCard(
-                  child: Column(
-                    children: [
-                      for (final s in samples)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Wrap(
-                            spacing: 24,
-                            children: [
-                              Text(
-                                DateFormat('d MMM yyyy').format(s.startedAt),
-                              ),
-                              Text('${s.rangeDegrees!.round()} degrees'),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                for (final entry in [
+                  ('Shoulder range', shoulder, 'degrees', 180.0),
+                  ('Knee range', knee, 'degrees', 180.0),
+                  ('Balance stability', balance, '% stable', 100.0),
+                  ('Arm hold', hold, 'seconds', 30.0),
+                ])
+                  if (entry.$2.isNotEmpty)
+                    _ProgressMetricCard(
+                      title: entry.$1,
+                      samples: entry.$2,
+                      unit: entry.$3,
+                      scale: entry.$4,
+                    ),
                 const SizedBox(height: 16),
-                Text(
-                  '${samples.length} valid samples. No recovery score or clinical conclusion is inferred.',
+                const Text(
+                  'Measurements are motion estimates for therapist review, not clinical conclusions.',
                 ),
               ],
             );
@@ -120,4 +115,64 @@ class ProgressScreen extends ConsumerWidget {
       ],
     ),
   );
+}
+
+class _ProgressMetricCard extends StatelessWidget {
+  const _ProgressMetricCard({
+    required this.title,
+    required this.samples,
+    required this.unit,
+    required this.scale,
+  });
+
+  final String title, unit;
+  final List<TherapySession> samples;
+  final double scale;
+
+  double _value(TherapySession session) {
+    if (session.rangeDegrees != null) return session.rangeDegrees!;
+    final key = title == 'Balance stability'
+        ? 'stability_percent'
+        : 'hold_seconds';
+    return (session.analysisPayload[key] as num).toDouble();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ContentCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text('Each bar is one measured session · scale 0–${scale.round()}'),
+          const SizedBox(height: 16),
+          for (final sample in samples)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Semantics(
+                label:
+                    '${DateFormat('d MMM').format(sample.startedAt)}, ${_value(sample).round()} $unit',
+                child: ExcludeSemantics(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${DateFormat('d MMM').format(sample.startedAt)} · ${_value(sample).round()} $unit',
+                      ),
+                      const SizedBox(height: 6),
+                      LinearProgressIndicator(
+                        value: (_value(sample) / scale).clamp(0, 1),
+                        minHeight: 12,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
