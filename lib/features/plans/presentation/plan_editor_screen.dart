@@ -182,7 +182,7 @@ class _PlanEditorScreenState extends ConsumerState<PlanEditorScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Draft summary',
+                            'Draft summary (${_selected.length} exercises)',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 12),
@@ -201,71 +201,81 @@ class _PlanEditorScreenState extends ConsumerState<PlanEditorScreen> {
                         ],
                       ),
                     ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: (_step == 0 && _selected.isEmpty) || _isSaving
-                        ? null
-                        : () async {
-                            if (_step == 1 && !_form.currentState!.validate()) {
-                              return;
-                            }
-                            if (_step < 2) {
-                              setState(() => _step++);
-                            } else {
-                              setState(() => _isSaving = true);
-                              try {
-                                final repo = ref.read(planRepositoryProvider);
-                                final sessions =
-                                    int.tryParse(_sessions.text.trim()) ?? 4;
-                                await repo.savePlan(
-                                  patientId: widget.patientId,
-                                  title:
-                                      currentPlan?.title ??
-                                      'Personalized mobility routine',
-                                  exerciseIds: _selected.toList(),
-                                  scheduledSessions: sessions,
-                                );
-                                ref.invalidate(plansProvider);
-                                ref.invalidate(patientsProvider);
-                                if (!context.mounted) return;
-                                setState(() => _dirty = false);
-                                showPhaseNotice(
-                                  context,
-                                  'Prescription saved and activated.',
-                                );
-                                Navigator.of(context).pop();
-                              } catch (e) {
-                                if (!context.mounted) return;
-                                setState(() => _isSaving = false);
-                                showPhaseNotice(
-                                  context,
-                                  'Could not save prescription: $e',
-                                );
-                              }
-                            }
-                          },
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            _step == 2 ? 'Publish prescription' : 'Continue',
-                          ),
-                  ),
-                  if (_step > 0 && !_isSaving)
-                    TextButton(
-                      onPressed: () => setState(() => _step--),
-                      child: const Text('Previous step'),
-                    ),
-                ],
+                  ],
+                ),
               ),
+            ],
+          ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FilledButton(
+                  onPressed: (_step == 0 && _selected.isEmpty) || _isSaving
+                      ? null
+                      : () async {
+                          if (_step == 1 && !_form.currentState!.validate()) {
+                            return;
+                          }
+                          if (_step < 2) {
+                            setState(() => _step++);
+                          } else {
+                            setState(() => _isSaving = true);
+                            try {
+                              final repo = ref.read(planRepositoryProvider);
+                              final sessions =
+                                  int.tryParse(_sessions.text.trim()) ?? 4;
+                              await repo.savePlan(
+                                patientId: widget.patientId,
+                                title:
+                                    currentPlan?.title ??
+                                    'Personalized daily routine',
+                                exerciseIds: _selected.toList(),
+                                scheduledSessions: sessions,
+                              );
+                              ref.invalidate(plansProvider);
+                              ref.invalidate(patientsProvider);
+                              if (!context.mounted) return;
+                              setState(() => _dirty = false);
+                              showPhaseNotice(
+                                context,
+                                'Prescription saved and activated.',
+                              );
+                              Navigator.of(context).pop();
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              setState(() => _isSaving = false);
+                              showPhaseNotice(
+                                context,
+                                'Could not save prescription: $e',
+                              );
+                            }
+                          }
+                        },
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          _step == 2 ? 'Publish prescription' : 'Continue',
+                        ),
+                ),
+                if (_step > 0 && !_isSaving)
+                  TextButton(
+                    onPressed: () => setState(() => _step--),
+                    child: const Text('Previous step'),
+                  ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

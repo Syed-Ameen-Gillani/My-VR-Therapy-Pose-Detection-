@@ -52,7 +52,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (mounted) {
           showPhaseNotice(
             context,
-            'Account created! Check your email if confirmation is required.',
+            'Account created successfully!',
           );
         }
       } else {
@@ -234,60 +234,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                     ),
                     const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () {
-                              setState(() {
-                                _isSignUp = !_isSignUp;
-                                _errorMessage = null;
-                              });
-                            },
-                      child: Text.rich(
-                        TextSpan(
-                          text: _isSignUp
-                              ? 'Already have an account? '
-                              : "Don't have an account? ",
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 14,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: _isSignUp ? 'Sign in' : 'Create one',
-                              style: TextStyle(
-                                color: colors.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                setState(() {
+                                  _isSignUp = !_isSignUp;
+                                  _errorMessage = null;
+                                });
+                              },
+                        child: Text.rich(
+                          TextSpan(
+                            text: _isSignUp
+                                ? 'Already have an account? '
+                                : "Don't have an account? ",
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 14,
                             ),
-                          ],
+                            children: [
+                              TextSpan(
+                                text: _isSignUp ? 'Sign in' : 'Create one',
+                                style: TextStyle(
+                                  color: colors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 36),
-                    // const Divider(height: 36),
-                    FilledButton.icon(
-                      onPressed: _isLoading
-                          ? null
-                          : () => ref.read(demoAccessProvider.notifier).enter(),
-                      icon: const Icon(Icons.arrow_forward),
-                      label: const Text(
-                        'Explore demo',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                    // const SizedBox(height: 16),
-                    // Text(
-                    //   'Secured with Supabase Auth & RLS • FYP Demo',
-                    //   textAlign: TextAlign.center,
-                    //   style: TextStyle(
-                    //     fontSize: 12,
-                    //     color: colors.onSurfaceVariant,
-                    //   ),
-                    // ),
                   ],
                 ),
               ),

@@ -48,27 +48,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final displayName = user?.displayName?.trim();
-    final title =
-        displayName == null || displayName.isEmpty ? user?.email : displayName;
+    final title = displayName == null || displayName.isEmpty
+        ? user?.email
+        : displayName;
 
     return PageBody(
       children: [
         const PageHeading(
           'Your workspace',
-          'A simple foundation for thoughtful care.',
+          'Your profile and account preferences.',
         ),
         ContentCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              StatusBadge(
-                user != null ? 'Authenticated Therapist' : 'Demo therapist',
-                tone: user != null ? StatusTone.success : StatusTone.info,
-              ),
-              const SizedBox(height: 16),
+              // CircleAvatar(
+              //   radius: 30,
+              //   backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              //   foregroundColor: Theme.of(context).colorScheme.primary,
+              //   child: const Icon(Icons.person_outline_rounded, size: 32),
+              // ),
+              // const SizedBox(height: 16),
+              // StatusBadge(
+              //   user != null ? 'Therapist account' : 'Not signed in',
+              //   tone: user != null ? StatusTone.success : StatusTone.info,
+              // ),
+              // const SizedBox(height: 16),
               Text(
-                title ?? 'Demo therapist',
-                style: Theme.of(context).textTheme.titleMedium,
+                title ?? 'Sign in to your account',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               if (user != null && title != user.email) ...[
                 const SizedBox(height: 4),
@@ -79,14 +87,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 8),
-              Text(
-                user != null
-                    ? 'Connected to Supabase PostgreSQL with Row-Level Security enabled.'
-                    : 'All patients and measurements are fictional sample records.',
+             
+            ],
+          ),
+        ),
+        const SectionHeading('About your workspace'),
+        const ContentCard(
+          child: Column(
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.accessibility_new_rounded),
+                title: Text('Movement tracking'),
+                subtitle: Text(
+                  'Camera-guided exercises with session summaries.',
+                ),
               ),
-              const SizedBox(height: 12),
-              const Text('VR Therapy - Phase 2 Active'),
+              Divider(),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.insights_rounded),
+                title: Text('Patient progress'),
+                subtitle: Text(
+                  'Compare recorded measurements and review each session.',
+                ),
+              ),
             ],
           ),
         ),
@@ -100,7 +125,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.logout),
-          label: Text(user != null ? 'Sign out' : 'Leave demo'),
+          label: const Text('Sign out'),
         ),
       ],
     );

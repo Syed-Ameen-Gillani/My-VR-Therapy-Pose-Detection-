@@ -76,6 +76,7 @@ class MotionController {
     _consecutiveErrors = 0;
     startedAt ??= DateTime.now().toUtc();
     analyzer.breakContinuity();
+    analyzer.completionHold.reset();
     _clock.start();
     running = true;
     try {
@@ -107,6 +108,13 @@ class MotionController {
       inferenceMilliseconds = timer.elapsedMicroseconds / 1000;
       pose.value = detected;
       final next = analyzer.process(detected, _clock.elapsed);
+      if (analyzer.completionHold.completed) {
+        running = false;
+        _clock.stop();
+        reading.value = next;
+        _notifyLifecycle();
+        return;
+      }
       if (!next.valid ||
           _clock.elapsed - _lastText >= const Duration(milliseconds: 250)) {
         reading.value = next;
@@ -141,6 +149,7 @@ class MotionController {
     } finally {
       await _frame;
       analyzer.breakContinuity();
+      analyzer.completionHold.reset();
       if (!_closed) {
         pose.value = null;
         reading.value = MotionReading(

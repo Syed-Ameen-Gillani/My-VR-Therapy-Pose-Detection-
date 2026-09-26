@@ -362,6 +362,7 @@ class _MotionTrackingScreenState extends ConsumerState<MotionTrackingScreen>
                     ],
                   ),
                 ),
+                SizedBox(height: 16),
                 Text(
                   'Duration: ${controller.durationSeconds} seconds\n'
                   'Analysis: ${controller.analyzer.status}\nTracking quality: ${controller.analyzer.quality}\n'

@@ -31,6 +31,15 @@ class PageHeading extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          width: 32,
+          height: 4,
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
         Text(title, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 6),
         Text(
@@ -68,7 +77,7 @@ class ContentCard extends StatelessWidget {
   final Widget child;
   @override
   Widget build(BuildContext context) => Card(
-    child: Padding(padding: const EdgeInsets.all(16), child: child),
+    child: Padding(padding: const EdgeInsets.all(20), child: child),
   );
 }
 
@@ -91,22 +100,24 @@ class StatusBadge extends StatelessWidget {
       StatusTone.info => (t.info, t.infoSurface, Icons.info_outline),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: fg.withValues(alpha: 0.15), width: 1),
       ),
       child: Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 6,
+        spacing: 5,
         children: [
-          Icon(icon, size: 16, color: fg),
+          Icon(icon, size: 14, color: fg),
           Text(
             label,
             style: TextStyle(
               color: fg,
               fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.1,
             ),
           ),
         ],
@@ -128,19 +139,37 @@ class StateMessage extends StatelessWidget {
   final IconData icon;
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(24),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 36, color: Theme.of(context).colorScheme.primary),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: 26,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
         const SizedBox(height: 12),
         Text(
           title,
           style: Theme.of(context).textTheme.titleMedium,
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 8),
-        Text(message, textAlign: TextAlign.center),
+        const SizedBox(height: 4),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 14,
+          ),
+        ),
         if (onRetry != null)
           Padding(
             padding: const EdgeInsets.only(top: 16),
@@ -171,7 +200,7 @@ class AsyncContent<T> extends StatelessWidget {
     loading: () => const Padding(
       padding: EdgeInsets.all(32),
       child: Center(
-        child: CircularProgressIndicator(semanticsLabel: 'Loading sample data'),
+        child: CircularProgressIndicator(semanticsLabel: 'Loading data'),
       ),
     ),
     error: (_, _) => StateMessage(
@@ -197,13 +226,27 @@ class MetricCard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            icon,
+            size: 22,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 10),
         Text(value, style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 2),
         Text(
           label,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],

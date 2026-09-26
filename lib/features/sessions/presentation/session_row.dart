@@ -18,7 +18,7 @@ class SessionRow extends StatelessWidget {
   final String title;
   @override
   Widget build(BuildContext context) => InkWell(
-    borderRadius: BorderRadius.circular(12),
+    borderRadius: BorderRadius.circular(16),
     onTap: () => context.push('/sessions/${session.id}'),
     child: Padding(
       padding: const EdgeInsets.all(16),
@@ -30,15 +30,25 @@ class SessionRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.titleSmall,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              const Icon(Icons.chevron_right),
+              const Icon(
+                Icons.chevron_right,
+                color: Color(0xFF94A3B8),
+                size: 20,
+              ),
             ],
           ),
           const SizedBox(height: 6),
           Text(
             '${DateFormat('d MMM').format(session.startedAt)} • ${session.durationMinutes} min • ${session.repetitions} repetitions',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 10),
           StatusBadge(

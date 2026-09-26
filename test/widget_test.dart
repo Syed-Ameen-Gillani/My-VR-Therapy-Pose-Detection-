@@ -145,9 +145,11 @@ startAuthenticatedApp(WidgetTester tester) async {
 }
 
 Future<void> enterDemo(WidgetTester tester) async {
-  await tester.ensureVisible(find.text('Explore demo'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('Explore demo'));
+  // Fixtures are entered through the test container, never a public login action.
+  ProviderScope.containerOf(
+    tester.element(find.byType(TherapyApp)),
+    listen: false,
+  ).read(demoAccessProvider.notifier).enter();
   await tester.pumpAndSettle();
   expect(find.text('Your care, at a glance'), findsOneWidget);
 }
@@ -174,7 +176,8 @@ void main() {
     tester,
   ) async {
     final container = await startApp(tester);
-    expect(find.text('Explore demo'), findsOneWidget);
+    expect(find.text('Explore demo'), findsNothing);
+    expect(find.text('Welcome back. Sign in to continue.'), findsOneWidget);
     await enterDemo(tester);
     expect(find.text('Your care, at a glance'), findsOneWidget);
     await tester.tap(find.text('Patients'));
@@ -188,12 +191,14 @@ void main() {
     expect(find.text('Shoulder mobility'), findsOneWidget);
     container.read(routerProvider).go('/settings');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Leave demo'));
+    await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
-    expect(find.text('Explore demo'), findsOneWidget);
+    expect(find.text('Explore demo'), findsNothing);
+    expect(find.text('Welcome back. Sign in to continue.'), findsOneWidget);
     container.read(routerProvider).go('/patients/p1');
     await tester.pumpAndSettle();
-    expect(find.text('Explore demo'), findsOneWidget);
+    expect(find.text('Explore demo'), findsNothing);
+    expect(find.text('Welcome back. Sign in to continue.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -209,13 +214,16 @@ void main() {
 
     expect(find.text('Dr. Shah'), findsOneWidget);
     expect(find.text('a@gmail.com'), findsOneWidget);
-    expect(find.text('Authenticated Therapist'), findsOneWidget);
+    expect(find.text('Therapist account'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Sign out'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
 
     expect(auth.signOutCount, 1);
-    expect(find.text('Explore demo'), findsOneWidget);
+    expect(find.text('Explore demo'), findsNothing);
+    expect(find.text('Welcome back. Sign in to continue.'), findsOneWidget);
   });
 
   testWidgets('empty and missing record states do not invent data', (
@@ -384,10 +392,7 @@ void main() {
     expect(find.text('3/7'), findsOneWidget);
     expect(find.text('Plan adherence estimate'), findsOneWidget);
     expect(find.text('Sessions to review'), findsOneWidget);
-    expect(
-      find.textContaining('3 of 7 scheduled sessions'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('3 of 7 scheduled sessions'), findsOneWidget);
   });
 
   testWidgets('create patient and archive patient flow', (tester) async {

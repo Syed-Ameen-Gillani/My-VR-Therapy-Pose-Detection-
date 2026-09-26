@@ -74,29 +74,48 @@ class OverviewScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          const Color(0xFF134E4A),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
                           Icons.spa_outlined,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'Every session tells a story',
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           '${summary.adherenceDetail}. Explore movement results and see where a patient may need your attention.',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
                         ),
                         const SizedBox(height: 14),
                         FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onPrimary,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                          ),
                           onPressed: () => pending.isEmpty
                               ? context.go('/patients')
                               : context.push('/sessions/${pending.first.id}'),
@@ -136,13 +155,6 @@ class OverviewScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                  // const SizedBox(height: 8),
-                  // Text(
-                  //   'Demo snapshot - 24 September 2026',
-                  //   style: TextStyle(
-                  //     color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  //   ),
-                  // ),
                 ],
               );
             },

@@ -256,8 +256,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                         children: [
                           if (session.trackingQuality != null)
                             StatusBadge('Tracking ${session.trackingQuality}'),
-                          if (session.modelVersion != null)
-                            StatusBadge('Model ${session.modelVersion}'),
+                          // if (session.modelVersion != null)
+                          //   StatusBadge('Model ${session.modelVersion}'),
                           if (session.aiFeedback == null &&
                               session.trackingQuality == null &&
                               session.modelVersion == null)

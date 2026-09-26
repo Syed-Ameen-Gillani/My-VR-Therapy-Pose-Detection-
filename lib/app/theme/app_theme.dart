@@ -58,7 +58,9 @@ ThemeData buildAppTheme() {
         onPrimary: Colors.white,
         primaryContainer: const Color(0xFFCCFBF1),
         onPrimaryContainer: const Color(0xFF134E4A),
-        surface: const Color(0xFFF7FAFC),
+        surface: const Color(0xFFF3F7F8),
+        surfaceContainer: const Color(0xFFEDF3F4),
+        surfaceContainerHighest: const Color(0xFFE5EFF0),
         surfaceContainerLow: Colors.white,
         onSurface: const Color(0xFF172B3A),
         onSurfaceVariant: const Color(0xFF526473),
@@ -73,7 +75,7 @@ ThemeData buildAppTheme() {
     scaffoldBackgroundColor: scheme.surface,
     fontFamily: 'Roboto',
   );
-  final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
+  final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(16));
   return base.copyWith(
     extensions: const [StatusColors()],
     textTheme: base.textTheme
@@ -81,7 +83,8 @@ ThemeData buildAppTheme() {
           headlineMedium: const TextStyle(
             fontSize: 28,
             height: 36 / 28,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.7,
           ),
           titleLarge: const TextStyle(
             fontSize: 22,
@@ -101,19 +104,29 @@ ThemeData buildAppTheme() {
             fontWeight: FontWeight.w500,
           ),
         )
-        .apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
+        .apply(
+          fontFamily: 'Roboto',
+          bodyColor: scheme.onSurface,
+          displayColor: scheme.onSurface,
+        ),
     appBarTheme: AppBarTheme(
       backgroundColor: scheme.surface,
       foregroundColor: scheme.onSurface,
       elevation: 0,
+      scrolledUnderElevation: 0,
       centerTitle: false,
+      titleTextStyle: base.textTheme.titleLarge?.copyWith(
+        color: scheme.onSurface,
+        fontWeight: FontWeight.w700,
+        fontSize: 20,
+      ),
     ),
     cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         side: BorderSide(color: scheme.outlineVariant),
       ),
       clipBehavior: Clip.antiAlias,
@@ -137,11 +150,47 @@ ThemeData buildAppTheme() {
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.all(16),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: scheme.outlineVariant),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: scheme.primary, width: 2),
+      ),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: Colors.white,
       indicatorColor: scheme.primaryContainer,
+      elevation: 0,
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => TextStyle(
+          fontSize: 12,
+          fontWeight: states.contains(WidgetState.selected)
+              ? FontWeight.w700
+              : FontWeight.w500,
+          color: states.contains(WidgetState.selected)
+              ? scheme.primary
+              : scheme.onSurfaceVariant,
+        ),
+      ),
     ),
-    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
+    listTileTheme: ListTileThemeData(
+      iconColor: scheme.primary,
+      titleTextStyle: base.textTheme.titleSmall?.copyWith(
+        color: scheme.onSurface,
+        fontWeight: FontWeight.w600,
+      ),
+      subtitleTextStyle: base.textTheme.bodyMedium?.copyWith(
+        color: scheme.onSurfaceVariant,
+      ),
+    ),
+    dividerTheme: DividerThemeData(color: scheme.outlineVariant, thickness: 1),
+    snackBarTheme: const SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(10)),
+      ),
+    ),
   );
 }

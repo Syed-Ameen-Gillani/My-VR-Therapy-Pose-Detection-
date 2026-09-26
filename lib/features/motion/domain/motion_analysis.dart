@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'stable_hold.dart';
 
 enum MotionExercise {
   shoulderReach('e1', 'Shoulder reach'),
@@ -16,6 +17,21 @@ enum MotionExercise {
   final String id, label;
   static MotionExercise? fromId(String id) =>
       values.where((e) => e.id == id).firstOrNull;
+}
+
+extension MotionGuidance on MotionExercise {
+  String get guidance => switch (this) {
+    MotionExercise.shoulderReach => 'Side view: raise your arm forward; keep your hip and whole arm visible.',
+    MotionExercise.kneeExtension => 'Sit side-on. Straighten your knee; keep hip, knee and ankle visible.',
+    MotionExercise.seatedBalance => 'Face the camera. Sit centered with both shoulders and hips visible.',
+    MotionExercise.armHold => 'Raise your arm and keep your back upright; show your hip and whole arm.',
+    MotionExercise.elbowFlexion => 'Side view: bend your elbow, bringing your hand toward your shoulder.',
+    MotionExercise.hipFlexion => 'Sit side-on. Lift your knee toward your chest; keep shoulder, hip and knee visible.',
+    MotionExercise.kneeFlexion => 'Sit side-on. Bend your knee back; show hip, knee and ankle.',
+    MotionExercise.shoulderAbduction => 'Face the camera. Raise your arm sideways with your trunk upright.',
+    MotionExercise.trunkAlignment => 'Face the camera. Sit upright with both shoulders above your hips.',
+    MotionExercise.sitToStand => 'Side view: stand upright from a stable chair; keep hip, knee and ankle visible.',
+  };
 }
 
 enum Joint {
@@ -92,6 +108,7 @@ class MotionReading {
 class MotionAnalyzer {
   MotionAnalyzer(this.exercise, {this.rightSide = true});
   final MotionExercise exercise;
+  final completionHold = StableHold();
   final bool rightSide;
   final List<double> _window = [];
   int analyzed = 0, accepted = 0, repetitions = 0;
@@ -120,6 +137,7 @@ class MotionAnalyzer {
     final knee = rightSide ? Joint.rightKnee : Joint.leftKnee;
     final ankle = rightSide ? Joint.rightAnkle : Joint.leftAnkle;
     final required = switch (exercise) {
+      MotionExercise.hipFlexion => [shoulder, hip, knee],
       MotionExercise.kneeExtension ||
       MotionExercise.kneeFlexion ||
       MotionExercise.sitToStand => [hip, knee, ankle],
@@ -144,6 +162,7 @@ class MotionAnalyzer {
         pose.aspect <= 0 ||
         required.any((j) => pose.point(j) == null)) {
       breakContinuity();
+      completionHold.update(false, time);
       return MotionReading(
         'Keep the required joints visible in good light',
         repetitions: repetitions,
@@ -209,6 +228,7 @@ class MotionAnalyzer {
     }
     if (raw == null || !raw.isFinite) {
       breakContinuity();
+      completionHold.update(false, time);
       return MotionReading(
         'Adjust the camera to show your movement clearly',
         repetitions: repetitions,
@@ -291,6 +311,19 @@ class MotionAnalyzer {
     }
     if (good && _previousGood) goodSeconds += dt;
     _previousGood = good;
+    final tolerance = completionHold.active ? 5.0 : 0.0;
+    final target = switch (exercise) {
+      MotionExercise.seatedBalance => metric <= (completionHold.active ? .20 : .15),
+      MotionExercise.trunkAlignment => metric <= (completionHold.active ? .30 : .25),
+      MotionExercise.elbowFlexion => metric <= 70 + tolerance && lean <= .30,
+      MotionExercise.hipFlexion => metric <= 80 + tolerance && lean <= .30,
+      MotionExercise.kneeFlexion => metric <= 90 + tolerance,
+      MotionExercise.kneeExtension || MotionExercise.sitToStand => metric >= 155 - tolerance,
+      MotionExercise.armHold => metric >= 60 - tolerance && lean <= .30,
+      MotionExercise.shoulderAbduction => metric >= 75 - tolerance && lean <= .30,
+      MotionExercise.shoulderReach => metric >= 70 - tolerance && lean <= .30,
+    };
+    completionHold.update(target, time);
     return MotionReading(
       message,
       metric: metric,
@@ -309,12 +342,16 @@ class MotionAnalyzer {
       : 'Low';
   String get status => accepted == 0
       ? 'failed'
+      : completionHold.completed ? 'ready'
       : acceptedRatio >= .7 && validSeconds >= 5
       ? 'ready'
       : 'incomplete';
   Map<String, Object?> summary() => {
+    'completed': completionHold.completed,
+    'target_hold_seconds': 3,
+    'completed_hold_seconds': completionHold.seconds,
     'source': 'android_camera',
-    'rule_version': 'rehab-rules-v1',
+    'rule_version': 'rehab-hold-v2',
     'model_version': 'mlkit-base-stream/plugin-0.16.1',
     'tracking_quality': quality,
     'analyzed_frames': analyzed,

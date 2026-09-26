@@ -19,19 +19,24 @@ class AppShell extends StatelessWidget {
     final scaled = MediaQuery.textScalerOf(context).scale(14) / 14;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('VR Therapy'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Semantics(
-              label: 'Demo data only',
-              child: Chip(
-                label: const Text('DEMO'),
-                visualDensity: VisualDensity.compact,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.accessibility_new_rounded,
+                size: 22,
+                color: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            const Flexible(child: Text('VR Therapy')),
+          ],
+        ),
       ),
       body: SafeArea(
         child: Row(
@@ -56,14 +61,26 @@ class AppShell extends StatelessWidget {
       ),
       bottomNavigationBar: wide
           ? null
-          : NavigationBar(
-              height: 80 + (scaled > 1.3 ? 24 : 0),
-              selectedIndex: shell.currentIndex,
-              onDestinationSelected: _select,
-              destinations: [
-                for (var i = 0; i < labels.length; i++)
-                  NavigationDestination(icon: Icon(icons[i]), label: labels[i]),
-              ],
+          : DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+              ),
+              child: NavigationBar(
+                height: 80 + (scaled > 1.3 ? 24 : 0),
+                selectedIndex: shell.currentIndex,
+                onDestinationSelected: _select,
+                destinations: [
+                  for (var i = 0; i < labels.length; i++)
+                    NavigationDestination(
+                      icon: Icon(icons[i]),
+                      label: labels[i],
+                    ),
+                ],
+              ),
             ),
     );
   }

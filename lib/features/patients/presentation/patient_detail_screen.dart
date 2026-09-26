@@ -9,56 +9,20 @@ import 'patient_form_dialog.dart';
 import '../../sessions/presentation/session_row.dart';
 import '../../motion/domain/motion_analysis.dart';
 
-class PatientDetailScreen extends ConsumerWidget {
+class PatientDetailScreen extends ConsumerStatefulWidget {
   const PatientDetailScreen({super.key, required this.id});
   final String id;
 
-  Future<void> _confirmArchive(
-    BuildContext context,
-    WidgetRef ref,
-    Patient patient,
-  ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Archive patient?'),
-        content: Text(
-          'Archiving ${patient.name} removes them from the active list while preserving historical sessions.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Archive'),
-          ),
-        ],
-      ),
-    );
+  @override
+  ConsumerState<PatientDetailScreen> createState() =>
+      _PatientDetailScreenState();
+}
 
-    if (confirmed == true && context.mounted) {
-      try {
-        await ref.read(patientRepositoryProvider).archivePatient(patient.id);
-        ref.invalidate(patientsProvider);
-        if (context.mounted) {
-          context.pop();
-          showPhaseNotice(context, '${patient.name} archived.');
-        }
-      } catch (e) {
-        if (context.mounted) {
-          showPhaseNotice(context, 'Could not archive patient: $e');
-        }
-      }
-    }
-  }
+class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
+  bool _showAllExercises = false;
 
-  Future<void> _openEditDialog(
-    BuildContext context,
-    WidgetRef ref,
-    Patient patient,
-  ) async {
+
+  Future<void> _openEditDialog(BuildContext context, Patient patient) async {
     final updated = await showDialog<bool>(
       context: context,
       builder: (context) => PatientFormDialog(
@@ -82,7 +46,7 @@ class PatientDetailScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -93,29 +57,20 @@ class PatientDetailScreen extends ConsumerWidget {
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'Edit patient',
             onPressed: () {
-              final patient = ref.read(patientProvider(id)).value;
+              final patient = ref.read(patientProvider(widget.id)).value;
               if (patient != null) {
-                _openEditDialog(context, ref, patient);
+                _openEditDialog(context, patient);
               }
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.archive_outlined),
-            tooltip: 'Archive patient',
-            onPressed: () {
-              final patient = ref.read(patientProvider(id)).value;
-              if (patient != null) {
-                _confirmArchive(context, ref, patient);
-              }
-            },
-          ),
+         
         ],
       ),
       body: SafeArea(
         child: PageBody(
           children: [
             AsyncContent(
-              value: ref.watch(patientProvider(id)),
+              value: ref.watch(patientProvider(widget.id)),
               onRetry: () => ref.invalidate(patientsProvider),
               builder: (patient) {
                 if (patient == null) {
@@ -128,11 +83,7 @@ class PatientDetailScreen extends ConsumerWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    StatusBadge(
-                      user != null ? 'Active patient' : 'Fictional patient',
-                      tone: user != null ? StatusTone.success : StatusTone.info,
-                    ),
-                    const SizedBox(height: 16),
+                   
                     PageHeading(
                       patient.name,
                       'Patient ID · ${patient.id.toUpperCase()}',
@@ -156,8 +107,20 @@ class PatientDetailScreen extends ConsumerWidget {
                       onRetry: () => ref.invalidate(plansProvider),
                       builder: (plans) {
                         final plan = plans
-                            .where((p) => p.patientId == id)
+                            .where((p) => p.patientId == widget.id)
                             .firstOrNull;
+                        final hasExercises =
+                            plan != null &&
+                            plan.status == 'active' &&
+                            plan.exerciseIds.isNotEmpty;
+                        final hasManyExercises =
+                            hasExercises && plan.exerciseIds.length > 3;
+                        final visibleExercises = hasExercises
+                            ? (_showAllExercises
+                                  ? plan.exerciseIds
+                                  : plan.exerciseIds.take(3).toList())
+                            : const <String>[];
+
                         return ContentCard(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -172,37 +135,103 @@ class PatientDetailScreen extends ConsumerWidget {
                                     ? 'No active rehabilitation plan. Prescribe a plan tailored to this patient.'
                                     : '${plan.exerciseIds.length} exercises • ${plan.scheduledSessions} scheduled sessions\nActive Prescription · Version ${plan.version}',
                               ),
-                              if (plan != null && plan.status == 'active') ...[
+                             const SizedBox(height: 8),
+                              if (hasExercises) ...[
                                 const SizedBox(height: 16),
-                                Text(
-                                  'Camera exercises',
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                ),
-                                const SizedBox(height: 8),
-                                for (final exerciseId in plan.exerciseIds)
-                                  if (MotionExercise.fromId(exerciseId)
-                                      case final exercise?)
-                                    Card(
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      child: ListTile(
-                                        leading: const CircleAvatar(
-                                          child: Icon(Icons.accessibility_new),
-                                        ),
-                                        title: Text(exercise.label),
-                                        subtitle: const Text('Camera tracking'),
-                                        trailing: IconButton(
-                                          tooltip: 'Start exercise',
-                                          onPressed: () => context.push(
-                                            '/patients/$id/motion/$exerciseId',
-                                          ),
-                                          icon: const Icon(Icons.play_arrow),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Prescribed exercises (${plan.exerciseIds.length})',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelLarge,
+                                    ),
+                                    if (hasManyExercises)
+                                      TextButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _showAllExercises =
+                                                !_showAllExercises;
+                                          });
+                                        },
+                                        child: Text(
+                                          _showAllExercises
+                                              ? 'Show less'
+                                              : 'See all',
                                         ),
                                       ),
-                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                AnimatedSize(
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeInOut,
+                                  alignment: Alignment.topCenter,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      for (final exerciseId in visibleExercises)
+                                        if (MotionExercise.fromId(exerciseId)
+                                            case final exercise?)
+                                          Card(
+                                            margin: const EdgeInsets.only(
+                                              bottom: 8,
+                                            ),
+                                            child: ListTile(
+                                              leading: const CircleAvatar(
+                                                child: Icon(
+                                                  Icons.accessibility_new,
+                                                ),
+                                              ),
+                                              title: Text(exercise.label),
+                                              subtitle: const Text(
+                                                'Camera tracking',
+                                              ),
+                                              trailing: IconButton(
+                                                tooltip: 'Start exercise',
+                                                onPressed: () => context.push(
+                                                  '/patients/${widget.id}/motion/$exerciseId',
+                                                ),
+                                                icon: const Icon(
+                                                  Icons.play_arrow,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                    ],
+                                  ),
+                                ),
+                                // if (hasManyExercises) ...[
+                                //   OutlinedButton.icon(
+                                //     onPressed: () {
+                                //       setState(() {
+                                //         _showAllExercises =
+                                //             !_showAllExercises;
+                                //       });
+                                //     },
+                                //     icon: Icon(
+                                //       _showAllExercises
+                                //           ? Icons.expand_less
+                                //           : Icons.expand_more,
+                                //       size: 18,
+                                //     ),
+                                //     label: Text(
+                                //       _showAllExercises
+                                //           ? 'Show less'
+                                //           : 'See all (${plan.exerciseIds.length} exercises)',
+                                //     ),
+                                //   ),
+                                //   const SizedBox(height: 8),
+                                // ],
+                                const SizedBox(height: 8),
                               ],
+                             
                               FilledButton(
                                 onPressed: () =>
-                                    context.push('/patients/$id/plan'),
+                                    context.push('/patients/${widget.id}/plan'),
                                 child: Text(
                                   plan == null
                                       ? 'Prescribe plan'
@@ -217,12 +246,13 @@ class PatientDetailScreen extends ConsumerWidget {
                     SectionHeading(
                       'Recent sessions',
                       action: TextButton(
-                        onPressed: () => context.push('/patients/$id/sessions'),
+                        onPressed: () =>
+                            context.push('/patients/${widget.id}/sessions'),
                         child: const Text('View all'),
                       ),
                     ),
                     AsyncContent(
-                      value: ref.watch(patientSessionsProvider(id)),
+                      value: ref.watch(patientSessionsProvider(widget.id)),
                       onRetry: () => ref.invalidate(sessionsProvider),
                       builder: (sessions) => Column(
                         children: [
@@ -247,7 +277,8 @@ class PatientDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     OutlinedButton.icon(
-                      onPressed: () => context.push('/patients/$id/progress'),
+                      onPressed: () =>
+                          context.push('/patients/${widget.id}/progress'),
                       icon: const Icon(Icons.insights_outlined),
                       label: const Text('View progress'),
                     ),

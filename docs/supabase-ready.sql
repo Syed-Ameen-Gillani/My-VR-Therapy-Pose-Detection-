@@ -47,6 +47,8 @@ create table if not exists plans (
   updated_at timestamptz not null default now()
 );
 
+alter table plans add column if not exists updated_at timestamptz not null default now();
+
 do $$
 begin
   if not exists (

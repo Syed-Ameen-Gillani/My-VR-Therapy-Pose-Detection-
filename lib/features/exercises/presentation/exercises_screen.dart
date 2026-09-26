@@ -13,8 +13,8 @@ class ExercisesScreen extends ConsumerWidget {
         'Exercise library',
         'A starting point for personalized rehabilitation.',
       ),
-      const StatusBadge('Sample instructions • Not a prescription'),
-      const SizedBox(height: 16),
+      // const StatusBadge('Sample instructions • Not a prescription'),
+      // const SizedBox(height: 16),
       AsyncContent(
         value: ref.watch(exercisesProvider),
         onRetry: () => ref.invalidate(exercisesProvider),
@@ -46,6 +46,7 @@ class ExercisesScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+        
           ],
         ),
       ),
@@ -77,8 +78,7 @@ class ExerciseDetailScreen extends ConsumerWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  StatusBadge(exercise.category),
-                  const SizedBox(height: 16),
+                 
                   PageHeading(
                     exercise.name,
                     'Approved exercise ID · ${exercise.id.toUpperCase()}',
