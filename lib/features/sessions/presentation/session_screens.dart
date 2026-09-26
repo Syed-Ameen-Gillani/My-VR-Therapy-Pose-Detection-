@@ -5,6 +5,7 @@ import '../../../app/di/providers.dart';
 import '../../../core/widgets/common.dart';
 import '../domain/therapy_session.dart';
 import 'session_row.dart';
+import 'pose_assessment_card.dart';
 
 class AllSessionsScreen extends ConsumerWidget {
   const AllSessionsScreen({super.key});
@@ -202,6 +203,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                   ),
                 ),
                 const SectionHeading('Movement analysis'),
+                PoseAssessmentCard(assessment: session.poseAssessment),
                 ContentCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

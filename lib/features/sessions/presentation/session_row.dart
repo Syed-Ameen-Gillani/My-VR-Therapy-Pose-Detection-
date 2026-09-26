@@ -51,6 +51,13 @@ class SessionRow extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
+          if (session.poseAssessment.percent != null) ...[
+            Text(
+              'Pose match: ${session.poseAssessment.displayPercent} · ${session.poseAssessment.rating}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 8),
+          ],
           StatusBadge(
             session.reviewed ? 'Reviewed' : analysisLabel(session.analysis),
             tone: session.reviewed

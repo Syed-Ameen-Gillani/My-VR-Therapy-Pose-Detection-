@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'stable_hold.dart';
+import '../../sessions/domain/pose_assessment.dart';
 
 enum MotionExercise {
   shoulderReach('e1', 'Shoulder reach'),
@@ -117,6 +118,39 @@ class MotionAnalyzer {
   Duration? _last, _topSince, _cycleStart;
   bool _armed = false, _raised = false;
   bool _previousGood = false;
+  double _matchIntegral = 0, _matchSeconds = 0;
+  double? _previousMatch;
+
+  PoseAssessment get assessment => PoseAssessment(
+    _matchSeconds >= 2 && acceptedRatio >= .5
+        ? (_matchIntegral / _matchSeconds * 100).clamp(0.0, 100.0)
+        : null,
+  );
+
+  // Full credit within the exercise target; smooth penalties outside it.
+  // Fixed thresholds ensure scores do not change with timer hysteresis.
+  double _poseMatch(double metric, double lean) {
+    final (target, lowerIsBetter) = switch (exercise) {
+      MotionExercise.seatedBalance => (.15, true),
+      MotionExercise.trunkAlignment => (.25, true),
+      MotionExercise.elbowFlexion => (70.0, true),
+      MotionExercise.hipFlexion => (80.0, true),
+      MotionExercise.kneeFlexion => (90.0, true),
+      MotionExercise.kneeExtension || MotionExercise.sitToStand => (155.0, false),
+      MotionExercise.armHold => (60.0, false),
+      MotionExercise.shoulderAbduction => (75.0, false),
+      MotionExercise.shoulderReach => (70.0, false),
+    };
+    final deviation = math.max(0.0, lowerIsBetter ? metric - target : target - metric);
+    final allowance = switch (exercise) {
+      MotionExercise.seatedBalance => .30,
+      MotionExercise.trunkAlignment => .50,
+      _ => 45.0,
+    };
+    final angleMatch = (1 - deviation / allowance).clamp(0.0, 1.0);
+    final trunkMatch = (1 - math.max(0.0, lean - .30) / .50).clamp(0.0, 1.0);
+    return math.min(angleMatch, trunkMatch);
+  }
 
   void breakContinuity() {
     _last = null;
@@ -126,6 +160,7 @@ class MotionAnalyzer {
     _raised = false;
     _window.clear();
     _previousGood = false;
+    _previousMatch = null;
   }
 
   MotionReading process(MotionPose? pose, Duration time) {
@@ -239,6 +274,14 @@ class MotionAnalyzer {
     _window.add(raw);
     if (_window.length > 5) _window.removeAt(0);
     final metric = _window.reduce((a, b) => a + b) / _window.length;
+    if (!completionHold.completed) {
+      final match = _poseMatch(metric, lean);
+      if (_previousMatch != null && dt > 0) {
+        _matchIntegral += (_previousMatch! + match) / 2 * dt;
+        _matchSeconds += dt;
+      }
+      _previousMatch = match;
+    }
     if (exercise != MotionExercise.seatedBalance &&
         exercise != MotionExercise.trunkAlignment) {
       maxAngle = math.max(maxAngle ?? metric, metric);
@@ -347,6 +390,10 @@ class MotionAnalyzer {
       ? 'ready'
       : 'incomplete';
   Map<String, Object?> summary() => {
+    'pose_match_percent': assessment.percent,
+    'pose_rating': assessment.percent == null ? null : assessment.rating,
+    'pose_score_version': 'target-match-v1',
+    'pose_score_seconds': _matchSeconds,
     'completed': completionHold.completed,
     'target_hold_seconds': 3,
     'completed_hold_seconds': completionHold.seconds,

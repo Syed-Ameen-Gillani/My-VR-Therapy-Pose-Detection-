@@ -1,3 +1,5 @@
+import 'pose_assessment.dart';
+
 enum AnalysisStatus { ready, pending, incomplete, failed }
 
 class TherapySession {
@@ -26,6 +28,7 @@ class TherapySession {
   final String? reviewNote;
   final bool reviewed;
   final Map<String, Object?> analysisPayload;
+  PoseAssessment get poseAssessment => PoseAssessment.fromPayload(analysisPayload);
 
   TherapySession copyWith({
     String? id,

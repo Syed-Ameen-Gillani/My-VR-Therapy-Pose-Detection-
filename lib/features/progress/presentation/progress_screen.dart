@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../app/di/providers.dart';
 import '../../../core/widgets/common.dart';
 import '../../sessions/domain/therapy_session.dart';
+import '../../sessions/presentation/pose_assessment_card.dart';
 
 final progressSamplesProvider = FutureProvider.autoDispose
     .family<List<TherapySession>, String>((ref, id) async {
@@ -169,6 +170,11 @@ class _ProgressMetricGraphCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: Theme.of(context).textTheme.titleMedium),
+          if (samples.last.poseAssessment.percent != null) ...[
+            const SizedBox(height: 8),
+            const Text('Latest session'),
+            PoseAssessmentCard(assessment: samples.last.poseAssessment),
+          ],
           const SizedBox(height: 4),
           Text('Each bar is one measured session · scale 0–${scale.round()}'),
           const SizedBox(height: 16),
@@ -214,7 +220,7 @@ class _ProgressMetricGraphCard extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 16),
               child: Semantics(
                 label:
-                    '${DateFormat('d MMM').format(sample.startedAt)}, ${_value(sample).round()} $unit',
+                    '${DateFormat('d MMM').format(sample.startedAt)}, ${_value(sample).round()} $unit, pose match ${sample.poseAssessment.displayPercent}, ${sample.poseAssessment.rating}',
                 child: ExcludeSemantics(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,6 +229,8 @@ class _ProgressMetricGraphCard extends StatelessWidget {
                         '${DateFormat('d MMM').format(sample.startedAt)} · ${_value(sample).round()} $unit',
                       ),
                       const SizedBox(height: 6),
+                      if (sample.poseAssessment.percent != null)
+                        Text('Pose match: ${sample.poseAssessment.displayPercent} · ${sample.poseAssessment.rating}'),
                       LinearProgressIndicator(
                         value: (_value(sample) / scale).clamp(0, 1),
                         minHeight: 12,

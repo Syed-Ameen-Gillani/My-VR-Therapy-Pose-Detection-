@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/di/providers.dart';
 import '../../plans/domain/rehabilitation_plan.dart';
 import '../../sessions/domain/therapy_session.dart';
+import '../../sessions/presentation/pose_assessment_card.dart';
 import '../application/motion_controller.dart';
 import '../domain/motion_analysis.dart';
 import '../../../core/widgets/common.dart';
@@ -332,6 +333,7 @@ class _MotionTrackingScreenState extends ConsumerState<MotionTrackingScreen>
                   ),
                 ),
                 const SectionHeading('Movement summary'),
+                PoseAssessmentCard(assessment: controller.analyzer.assessment),
                 ContentCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
