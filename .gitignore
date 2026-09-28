@@ -1,5 +1,12 @@
 # Miscellaneous
 .backups/
+
+# Local FYP planning and reference files
+/FYP Grp 21.docx
+/POSE_DETECTION_GUIDE.md
+/plan.md
+/fyp_abdullah.iml
+
 *.class
 *.log
 *.pyc
