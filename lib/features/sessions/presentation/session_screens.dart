@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'session_content_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../app/di/providers.dart';
@@ -140,7 +141,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => SessionContentTheme(builder: _buildResults);
+
+  Widget _buildResults(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Session results')),
     body: PageBody(
       children: [
@@ -319,7 +322,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
                               : 'Update review',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            fontSize: 15,
+                            fontSize: 14,
                           ),
                         ),
                 ),

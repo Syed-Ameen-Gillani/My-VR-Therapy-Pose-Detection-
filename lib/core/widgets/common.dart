@@ -73,11 +73,12 @@ class SectionHeading extends StatelessWidget {
 }
 
 class ContentCard extends StatelessWidget {
-  const ContentCard({super.key, required this.child});
+  const ContentCard({super.key, required this.child, this.padding = const EdgeInsets.all(20)});
   final Widget child;
+  final EdgeInsetsGeometry padding;
   @override
   Widget build(BuildContext context) => Card(
-    child: Padding(padding: const EdgeInsets.all(20), child: child),
+    child: Padding(padding: padding, child: child),
   );
 }
 
@@ -218,34 +219,39 @@ class MetricCard extends StatelessWidget {
     required this.value,
     required this.label,
     required this.icon,
+    this.compact = false,
   });
   final String value, label;
   final IconData icon;
+  final bool compact;
   @override
   Widget build(BuildContext context) => ContentCard(
+    padding: EdgeInsets.all(compact ? 12 : 20),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: EdgeInsets.all(compact ? 7 : 10),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(compact ? 10 : 14),
           ),
           child: Icon(
             icon,
-            size: 22,
+            size: compact ? 18 : 22,
             color: Theme.of(context).colorScheme.primary,
           ),
         ),
-        const SizedBox(height: 10),
-        Text(value, style: Theme.of(context).textTheme.headlineMedium),
+        SizedBox(height: compact ? 6 : 10),
+        Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+          fontSize: compact ? 24 : null,
+        )),
         const SizedBox(height: 2),
         Text(
           label,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 13,
+            fontSize: compact ? 12 : 13,
             fontWeight: FontWeight.w500,
           ),
         ),

@@ -44,31 +44,36 @@ class OverviewScreen extends ConsumerWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  AdaptivePair(
-                    first: MetricCard(
-                      value: '${summary.patientCount}',
-                      label: 'Patients in your care',
-                      icon: Icons.people_outline,
-                    ),
+                  _MetricRow(
+                    first:
+                      MetricCard(
+                        compact: true,
+                        value: '${summary.patientCount}',
+                        label: 'Patients in your care',
+                        icon: Icons.people_outline,
+                      ),
                     second: MetricCard(
-                      value: '${summary.reviewCount}',
-                      label: 'Sessions to review',
-                      icon: Icons.fact_check_outlined,
-                    ),
+                        compact: true,
+                        value: '${summary.reviewCount}',
+                        label: 'Sessions to review',
+                        icon: Icons.fact_check_outlined,
+                      ),
                   ),
-                  const SizedBox(height: 12),
-                  AdaptivePair(
+                  const SizedBox(height: 14),
+                  _MetricRow(
                     first: MetricCard(
-                      value: summary.adherenceValue,
-                      label: 'Plan adherence estimate',
-                      icon: Icons.timeline_outlined,
-                    ),
+                        compact: true,
+                        value: summary.adherenceValue,
+                        label: 'Plan adherence estimate',
+                        icon: Icons.timeline_outlined,
+                      ),
                     second: MetricCard(
-                      value:
-                          '${summary.completedScheduledSessions}/${summary.scheduledSessions}',
-                      label: 'Completed scheduled sessions',
-                      icon: Icons.task_alt_outlined,
-                    ),
+                        compact: true,
+                        value:
+                            '${summary.completedScheduledSessions}/${summary.scheduledSessions}',
+                        label: 'Completed scheduled sessions',
+                        icon: Icons.task_alt_outlined,
+                      ),
                   ),
                   const SizedBox(height: 20),
                   Container(
@@ -125,7 +130,7 @@ class OverviewScreen extends ConsumerWidget {
                                 : 'Review session',
                           ),
                         ),
-                  
+                      ]
                     ),
                   ),
                   SectionHeading(
@@ -162,5 +167,23 @@ class OverviewScreen extends ConsumerWidget {
         ),
       ),
     ],
+  );
+}
+
+/// Two equal-height columns that grow with their labels and text scaling.
+class _MetricRow extends StatelessWidget {
+  const _MetricRow({required this.first, required this.second});
+  final Widget first, second;
+
+  @override
+  Widget build(BuildContext context) => IntrinsicHeight(
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: first),
+        const SizedBox(width: 14),
+        Expanded(child: second),
+      ],
+    ),
   );
 }

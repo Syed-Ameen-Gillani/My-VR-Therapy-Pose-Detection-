@@ -10,6 +10,7 @@ import '../../../app/di/providers.dart';
 import '../../plans/domain/rehabilitation_plan.dart';
 import '../../sessions/domain/therapy_session.dart';
 import '../../sessions/presentation/pose_assessment_card.dart';
+import '../../sessions/presentation/session_content_theme.dart';
 import '../application/motion_controller.dart';
 import '../domain/motion_analysis.dart';
 import '../../../core/widgets/common.dart';
@@ -73,6 +74,7 @@ class _MotionTrackingScreenState extends ConsumerState<MotionTrackingScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _controller?.lifecycle.removeListener(_onTrackingChanged);
     _speechTimer?.cancel();
     unawaited(_tts.stop());
     unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
@@ -127,15 +129,29 @@ class _MotionTrackingScreenState extends ConsumerState<MotionTrackingScreen>
   }
 
   Future<void> _finish(MotionController controller) async {
-    setState(() => _busy = true);
+    if (!mounted || _finished) return;
+    // Show the summary immediately; native camera cleanup can take longer.
+    setState(() {
+      _finished = true;
+      _busy = true;
+    });
+    _speechTimer?.cancel();
+    unawaited(_tts.stop());
     try {
       await controller.suspend();
-      if (mounted) setState(() => _finished = true);
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  void _onTrackingChanged() {
+    final controller = _controller;
+    if (!mounted || _finished || controller == null ||
+        !controller.analyzer.completionHold.completed) return;
+    unawaited(_finish(controller));
+    unawaited(HapticFeedback.mediumImpact());
   }
 
   Future<void> _save(MotionController controller) async {
@@ -226,14 +242,15 @@ class _MotionTrackingScreenState extends ConsumerState<MotionTrackingScreen>
   }
 
   void _speak(String message) {
-    if (!mounted || _background || message == _lastSpokenMessage) return;
+    if (!mounted || _finished || _background || message == _lastSpokenMessage) return;
     _lastSpokenMessage = message;
     _speechTimer?.cancel();
     _speechTimer = Timer(const Duration(milliseconds: 350), () async {
-      if (!mounted || _background) return;
+      if (!mounted || _finished || _background) return;
       await _tts.stop();
       await _tts.setLanguage('en-US');
       await _tts.setSpeechRate(0.48);
+      if (!mounted || _finished || _background) return;
       await _tts.speak(message);
     });
   }
@@ -256,9 +273,18 @@ class _MotionTrackingScreenState extends ConsumerState<MotionTrackingScreen>
         rightSide: _rightSide,
       )),
     );
+    if (!identical(_controller, controller)) {
+      _controller?.lifecycle.removeListener(_onTrackingChanged);
+      _controller = controller;
+      controller.lifecycle.addListener(_onTrackingChanged);
+    }
     return ValueListenableBuilder(
       valueListenable: controller.lifecycle,
-      builder: (context, _, _) => _buildTracking(context, controller, exercise),
+      builder: (context, _, _) => _finished
+          ? SessionContentTheme(
+              builder: (context) => _buildTracking(context, controller, exercise),
+            )
+          : _buildTracking(context, controller, exercise),
     );
   }
 

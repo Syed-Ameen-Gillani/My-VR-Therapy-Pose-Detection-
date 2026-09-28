@@ -21,6 +21,38 @@ TherapySession sample(
 );
 
 void main() {
+  test('trunk holds and sit-to-stand measurements are included', () {
+    for (final id in ['e9', 'e10']) {
+      final session = TherapySession(
+        id: id,
+        patientId: 'p1',
+        exerciseId: id,
+        startedAt: DateTime.utc(2026, 9, 1),
+        durationMinutes: 1,
+        repetitions: 1,
+        analysis: AnalysisStatus.ready,
+        rangeDegrees: id == 'e10' ? 175 : null,
+        analysisPayload: const {'hold_seconds': 3.0},
+      );
+      expect(comparableExerciseSamples([session], id), [session]);
+    }
+  });
+
+  test('nonfinite and negative holds are excluded', () {
+    for (final value in [double.nan, double.infinity, -1.0]) {
+      final session = TherapySession(
+        id: 'invalid',
+        patientId: 'p1',
+        exerciseId: 'e9',
+        startedAt: DateTime.utc(2026, 9, 1),
+        durationMinutes: 1,
+        repetitions: 0,
+        analysis: AnalysisStatus.ready,
+        analysisPayload: {'hold_seconds': value},
+      );
+      expect(comparableExerciseSamples([session], 'e9'), isEmpty);
+    }
+  });
   test(
     'progress excludes opposite side, other source and other rule versions',
     () {
@@ -53,6 +85,8 @@ void main() {
         'rule_version': 'v1',
       },
     );
-    expect(comparableShoulderSamples([shortHighQuality]).map((s) => s.id), ['short']);
+    expect(comparableShoulderSamples([shortHighQuality]).map((s) => s.id), [
+      'short',
+    ]);
   });
 }

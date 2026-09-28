@@ -22,23 +22,28 @@ void bootstrap() {
         _reportStartupError(error, stackTrace);
       }
     },
-    _reportStartupError,
+    _reportRuntimeError,
   );
 }
 
 void _installReleaseErrorGuards() {
-  FlutterError.onError = (details) {
-    FlutterError.presentError(details);
-    _showFailureApp(details.exception);
-  };
+  // A recoverable framework error (including layout overflow) must not
+  // replace the running app and discard its provider/session state.
+  FlutterError.onError = FlutterError.presentError;
 
   PlatformDispatcher.instance.onError = (error, stackTrace) {
-    _reportStartupError(error, stackTrace);
+    _reportRuntimeError(error, stackTrace);
     return true;
   };
 
   ErrorWidget.builder = (details) =>
       StartupFailureView(error: details.exception);
+}
+
+void _reportRuntimeError(Object error, StackTrace? stackTrace) {
+  FlutterError.reportError(
+    FlutterErrorDetails(exception: error, stack: stackTrace, library: 'app runtime'),
+  );
 }
 
 void _reportStartupError(Object error, StackTrace? stackTrace) {
@@ -91,7 +96,7 @@ class StartupFailureView extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Please check internet access and app configuration, then reopen the app.',
+                    'An unexpected error occurred. Reopen the app. If it happens again, share the error details below.',
                     style: TextStyle(
                       color: Color(0xFF475569),
                       fontSize: 15,

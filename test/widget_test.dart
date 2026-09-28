@@ -395,6 +395,20 @@ void main() {
     expect(find.textContaining('3 of 7 scheduled sessions'), findsOneWidget);
   });
 
+  testWidgets('overview metric rows fit a narrow phone without overflow', (tester) async {
+    await startApp(tester, width: 360);
+    await enterDemo(tester);
+    expect(tester.takeException(), isNull);
+    final patients = find.widgetWithText(MetricCard, 'Patients in your care');
+    final reviews = find.widgetWithText(MetricCard, 'Sessions to review');
+    final adherence = find.widgetWithText(MetricCard, 'Plan adherence estimate');
+    final completed = find.widgetWithText(MetricCard, 'Completed scheduled sessions');
+    expect(tester.getTopLeft(patients).dy, tester.getTopLeft(reviews).dy);
+    expect(tester.getSize(patients).height, tester.getSize(reviews).height);
+    expect(tester.getTopLeft(adherence).dy, tester.getTopLeft(completed).dy);
+    expect(tester.getSize(adherence).height, tester.getSize(completed).height);
+  });
+
   testWidgets('create patient and archive patient flow', (tester) async {
     final container = await startApp(tester);
     await enterDemo(tester);
